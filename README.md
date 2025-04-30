@@ -10,11 +10,14 @@
 - Ctrl + G / Alt + G: 그룹화 및 언그룹 해제
 - 미러, Boolean, 피벗포인트 전환, 오리진 위치, 커서위치
 
-## 설치 방법
-1. 이 저장소에서 `modifier_pie_kit.py` 파일을 다운로드합니다.
-2. Blender에서 `Edit > Preferences > Add-ons > Install...`을 클릭합니다.
-3. 다운로드한 `.py` 파일을 그대로 선택하여 설치합니다.
-4. "Modifier Pie Kit" 항목을 체크하여 애드온을 활성화합니다.
+## 설치 안내
+
+⚠️ 주의: 상단의 `Code > Download ZIP` 버튼으로 받은 파일은 Blender 애드온 설치에 사용할 수 없습니다.  
+이 방식으로 받은 파일은 내부 폴더 구조로 인해 Blender가 인식하지 못합니다.
+
+✅ Blender에 애드온을 설치하려면, 반드시 아래 링크에서 `.zip` 파일을 받아주세요:
+
+📦 [정식 애드온 다운로드 (Releases)](https://github.com/art2coder/modifier-pie-kit/releases/latest)
 
 ## 라이선스
 MIT License  
