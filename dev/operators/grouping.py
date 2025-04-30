@@ -101,12 +101,16 @@ class OBJECT_OT_ungroup_empty(bpy.types.Operator):
 
 
 
-
+# ▶ 클래스 리스트로 통합
+classes = (
+    OBJECT_OT_group_by_empty,
+    OBJECT_OT_ungroup_empty,
+)
 
 def register():
-    bpy.utils.register_class(OBJECT_OT_group_by_empty)
-    bpy.utils.register_class(OBJECT_OT_ungroup_empty)
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.utils.unregister_class(OBJECT_OT_ungroup_empty)
-    bpy.utils.unregister_class(OBJECT_OT_group_by_empty)
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
