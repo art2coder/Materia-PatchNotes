@@ -396,18 +396,31 @@ class VIEW3D_OT_toggle_overlay(bpy.types.Operator):
 
 classes = (
      
-    OBJECT_OT_apply_all_common_modifiers,
+     # Boolean
     OBJECT_OT_add_boolean_popup,
     OBJECT_OT_apply_modifier_boolean,
+
+    # Bevel
     OBJECT_OT_add_bevel_popup,
     OBJECT_OT_apply_modifier_bevel,
-    OBJECT_OT_mirror_live_popup,
-    OBJECT_OT_confirm_mirror_and_apply,
+
+    # Curve Bevel
     OBJECT_OT_curve_bevel_popup,
+
+    # Subsurf
     OBJECT_OT_add_subsurf_popup,
     OBJECT_OT_apply_modifier_subsurf,
+
+    # Mirror
+    OBJECT_OT_mirror_live_popup,
+    OBJECT_OT_confirm_mirror_and_apply,
+
+    # Apply All
+    OBJECT_OT_apply_all_common_modifiers,
+
+    # Wire & Overlay
     OBJECT_OT_toggle_display_wire,
-    VIEW3D_OT_toggle_overlay, 
+    VIEW3D_OT_toggle_overlay,
     
 )        
 
