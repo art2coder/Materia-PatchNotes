@@ -19,12 +19,12 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
         # ↘ Bottom-Right
         pie.operator("modifier_pie.curve_bevel_popup",         text="Curve Bevel",  icon='CURVE_DATA')
 
-            # ↖ Top-Left
-        pie.operator("view3d.toggle_overlay",            text="Toggle Overlay", icon='OVERLAY')
-   
         # ← Left
         pie.operator("modifier_pie.toggle_display_wire",       text="Toggle Wire",  icon='SHADING_WIRE')
 
+         # ↖ Top-Left
+        pie.operator("view3d.toggle_overlay",            text="Toggle Overlay", icon='OVERLAY')
+        
          # ↙ Bottom-Left
         pie.operator("modifier_pie.apply_all_common_modifiers", text="Apply All",   icon='FILE_TICK')
 
