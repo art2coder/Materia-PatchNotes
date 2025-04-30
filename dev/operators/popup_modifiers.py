@@ -242,7 +242,7 @@ class OBJECT_OT_apply_all_common_modifiers(bpy.types.Operator):
             return {'CANCELLED'}
 
         applied = []
-        for t in ['BOOLEAN', 'BEVEL', 'MIRROR', 'SUBSURF']:
+        for t in ['BOOLEAN', 'BEVEL', 'MIRROR', 'SUBSURF', 'ARRAY', 'SOLIDIFY']:
             mod = next((m for m in obj.modifiers if m.type == t), None)
             if mod:
                 bpy.ops.object.modifier_apply(modifier=mod.name)
