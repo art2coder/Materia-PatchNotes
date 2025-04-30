@@ -195,27 +195,6 @@ class OBJECT_OT_confirm_mirror_and_apply(bpy.types.Operator):
                         break
         self.report({'INFO'}, "Mirror modifier applied.")
         return {'FINISHED'}
-
-
-# ─────────────────────────────────────────────
-# Apply 오퍼레이터
-# ─────────────────────────────────────────────
-
-class OBJECT_OT_confirm_mirror_and_apply(bpy.types.Operator):
-    bl_idname = "object.confirm_mirror_and_apply"
-    bl_label = "Apply Mirror Modifier"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        for obj in context.selected_objects:
-            if obj.type == 'MESH':
-                for mod in obj.modifiers:
-                    if mod.type == 'MIRROR':
-                        context.view_layer.objects.active = obj
-                        bpy.ops.object.modifier_apply(modifier=mod.name)
-                        break
-        self.report({'INFO'}, "Mirror Modifier applied.")
-        return {'FINISHED'}
     
 # ─────────────────────────────────────────────
 # Apply All Common Modifiers
