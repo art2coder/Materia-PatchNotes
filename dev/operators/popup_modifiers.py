@@ -6,7 +6,7 @@ import bpy
 
 class OBJECT_OT_add_boolean_popup(bpy.types.Operator):
     """Boolean Modifier"""
-    bl_idname = "object.add_boolean_popup"
+    bl_idname = "modifier_pie.add_boolean_popup"
     bl_label = "Boolean Modifier Settings"
     bl_options = {'UNDO'}
 
@@ -37,13 +37,13 @@ class OBJECT_OT_add_boolean_popup(bpy.types.Operator):
         elif self.mod.operand_type == 'COLLECTION':
             layout.prop(self.mod, "collection", text="Target Collection")
         layout.separator()
-        layout.operator("object.apply_modifier_boolean", text="Apply", icon='CHECKMARK')
+        layout.operator("modifier_pie.apply_modifier_boolean", text="Apply", icon='CHECKMARK')
 
     def execute(self, context):
         return {'FINISHED'}
 
 class OBJECT_OT_apply_modifier_boolean(bpy.types.Operator):
-    bl_idname = "object.apply_modifier_boolean"
+    bl_idname = "modifier_pie.apply_modifier_boolean"
     bl_label = "Apply Boolean Modifier"
 
     def execute(self, context):
@@ -60,7 +60,7 @@ class OBJECT_OT_apply_modifier_boolean(bpy.types.Operator):
 
 class OBJECT_OT_add_bevel_popup(bpy.types.Operator):
     """Bevel Modifier"""
-    bl_idname = "object.add_bevel_popup"
+    bl_idname = "modifier_pie.add_bevel_popup"
     bl_label = "Bevel Modifier Settings"
     bl_options = {'UNDO'}
 
@@ -90,13 +90,13 @@ class OBJECT_OT_add_bevel_popup(bpy.types.Operator):
         layout.prop(mod, "width", text="Amount")
         layout.prop(mod, "segments", text="Segments")
         layout.separator()
-        layout.operator("object.apply_modifier_bevel", text="Apply", icon='CHECKMARK')
+        layout.operator("modifier_pie.apply_modifier_bevel", text="Apply", icon='CHECKMARK')
 
     def execute(self, context):
         return {'FINISHED'}
 
 class OBJECT_OT_apply_modifier_bevel(bpy.types.Operator):
-    bl_idname = "object.apply_modifier_bevel"
+    bl_idname = "modifier_pie.apply_modifier_bevel"
     bl_label = "Apply Bevel Modifier"
 
     def execute(self, context):
@@ -141,7 +141,7 @@ def update_mirror_modifier(self, context):
 # 미러 팝업 오퍼레이터
 # ─────────────────────────────────────────────
 class OBJECT_OT_mirror_live_popup(bpy.types.Operator):
-    bl_idname = "object.mirror_live_popup"
+    bl_idname = "modifier_pie.mirror_live_popup"
     bl_label  = "Mirror Live Popup"
     bl_options= {'UNDO'}
 
@@ -172,7 +172,7 @@ class OBJECT_OT_mirror_live_popup(bpy.types.Operator):
         row.prop(self, "use_y", toggle=True)
         row.prop(self, "use_z", toggle=True)
         layout.separator()
-        layout.operator("object.confirm_mirror_and_apply", text="Apply", icon='CHECKMARK')
+        layout.operator("modifier_pie.confirm_mirror_and_apply", text="Apply", icon='CHECKMARK')
 
     def execute(self, context):
         self.report({'INFO'}, "Mirror preview settings applied.")
@@ -181,7 +181,7 @@ class OBJECT_OT_mirror_live_popup(bpy.types.Operator):
 
 class OBJECT_OT_confirm_mirror_and_apply(bpy.types.Operator):
     """Apply Mirror Modifier"""
-    bl_idname = "object.confirm_mirror_and_apply"
+    bl_idname = "modifier_pie.confirm_mirror_and_apply"
     bl_label  = "Apply Mirror"
     bl_options= {'UNDO'}
 
@@ -202,7 +202,7 @@ class OBJECT_OT_confirm_mirror_and_apply(bpy.types.Operator):
 
 class OBJECT_OT_apply_all_common_modifiers(bpy.types.Operator):
     """This apply works only through the add-on"""
-    bl_idname = "object.apply_all_common_modifiers"
+    bl_idname = "modifier_pie.apply_all_common_modifiers"
     bl_label = "Apply All Modifiers"
 
     @classmethod
@@ -239,7 +239,7 @@ class OBJECT_OT_apply_all_common_modifiers(bpy.types.Operator):
 
 class OBJECT_OT_curve_bevel_popup(bpy.types.Operator):
     """Pipe creation tool"""
-    bl_idname = "object.curve_bevel_popup"
+    bl_idname = "modifier_pie.curve_bevel_popup"
     bl_label = "Curve Bevel Settings"
     bl_options = {'UNDO'}
 
@@ -277,7 +277,7 @@ class OBJECT_OT_curve_bevel_popup(bpy.types.Operator):
 
 class OBJECT_OT_add_subsurf_popup(bpy.types.Operator):
     """Subdivision Surface Modifier"""
-    bl_idname = "object.add_subsurf_popup"
+    bl_idname = "modifier_pie.add_subsurf_popup"
     bl_label = "Subdivision Surface Settings"
     bl_options = {'UNDO'}
 
@@ -307,14 +307,14 @@ class OBJECT_OT_add_subsurf_popup(bpy.types.Operator):
         layout.prop(mod, "uv_smooth", text="UV Smooth")
 
         layout.separator()
-        layout.operator("object.apply_modifier_subsurf", text="Apply", icon='CHECKMARK')
+        layout.operator("modifier_pie.apply_modifier_subsurf", text="Apply", icon='CHECKMARK')
 
     def execute(self, context):
         return {'FINISHED'}
 
 
 class OBJECT_OT_apply_modifier_subsurf(bpy.types.Operator):
-    bl_idname = "object.apply_modifier_subsurf"
+    bl_idname = "modifier_pie.apply_modifier_subsurf"
     bl_label = "Apply Subsurf Modifier"
 
     def execute(self, context):
@@ -331,7 +331,7 @@ class OBJECT_OT_apply_modifier_subsurf(bpy.types.Operator):
     
 class OBJECT_OT_toggle_display_wire(bpy.types.Operator):
     """Toggle_Display_Wire"""
-    bl_idname = "object.toggle_display_wire"
+    bl_idname = "modifier_pie.toggle_display_wire"
     bl_label = "Toggle Wire Display"
     bl_description = "Toggle Display As: Wire for selected objects"
     bl_options = {'UNDO'}
