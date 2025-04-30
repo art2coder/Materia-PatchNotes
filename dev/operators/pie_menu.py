@@ -5,31 +5,31 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
     bl_idname = "PIE_MT_modifiers_pie"
 
     def draw(self, context):
-    pie = self.layout.menu_pie()
+        pie = self.layout.menu_pie()
 
-    # ↑ Top
-    pie.operator("modifier_pie.add_boolean_popup",         text="Boolean",      icon='MOD_BOOLEAN')
+        # ↑ Top
+        pie.operator("modifier_pie.add_boolean_popup",         text="Boolean",      icon='MOD_BOOLEAN')
     
-    # ↗ Top-Right
-    pie.operator("modifier_pie.add_bevel_popup",           text="Bevel",        icon='MOD_BEVEL')
+        # ↗ Top-Right
+        pie.operator("modifier_pie.add_bevel_popup",           text="Bevel",        icon='MOD_BEVEL')
   
-    # → Right
-    pie.operator("modifier_pie.mirror_live_popup",         text="Mirror",       icon='MOD_MIRROR')
+        # → Right
+        pie.operator("modifier_pie.mirror_live_popup",         text="Mirror",       icon='MOD_MIRROR')
    
-    # ↘ Bottom-Right
-    pie.operator("modifier_pie.curve_bevel_popup",         text="Curve Bevel",  icon='CURVE_DATA')
+        # ↘ Bottom-Right
+        pie.operator("modifier_pie.curve_bevel_popup",         text="Curve Bevel",  icon='CURVE_DATA')
 
-    # ↓ Bottom
-    pie.operator("modifier_pie.add_subsurf_popup",         text="Subsurf",      icon='MOD_SUBSURF')
+        # ↓ Bottom
+        pie.operator("modifier_pie.add_subsurf_popup",         text="Subsurf",      icon='MOD_SUBSURF')
    
-    # ↙ Bottom-Left
-    pie.operator("modifier_pie.apply_all_common_modifiers", text="Apply All",   icon='FILE_TICK')
+        # ↙ Bottom-Left
+        pie.operator("modifier_pie.apply_all_common_modifiers", text="Apply All",   icon='FILE_TICK')
 
-    # ← Left
-    pie.operator("modifier_pie.toggle_display_wire",       text="Toggle Wire",  icon='SHADING_WIRE')
+        # ← Left
+        pie.operator("modifier_pie.toggle_display_wire",       text="Toggle Wire",  icon='SHADING_WIRE')
 
-    # ↖ Top-Left
-    pie.operator("view3d.toggle_overlay",            text="Toggle Overlay", icon='OVERLAY')
+        # ↖ Top-Left
+        pie.operator("view3d.toggle_overlay",            text="Toggle Overlay", icon='OVERLAY')
 
         
 
