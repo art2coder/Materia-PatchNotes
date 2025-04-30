@@ -1,4 +1,5 @@
 import bpy
+from mathutils import Vector
 
 # ─────────────────────────────────────────────
 # 1) 그루핑 오퍼레이터
