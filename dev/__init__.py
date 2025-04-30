@@ -22,7 +22,7 @@ def register():
     register_keymaps()
 
 def unregister():
-    register_keymaps()
+    unregister_keymaps()
     ui.unregister()
     grouping.unregister()
 
