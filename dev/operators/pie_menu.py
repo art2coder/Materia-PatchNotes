@@ -22,12 +22,12 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
         # ↓ Bottom
         pie.operator("modifier_pie.add_subsurf_popup",         text="Subsurf",      icon='MOD_SUBSURF')
    
-        # ↙ Bottom-Left
-        pie.operator("modifier_pie.apply_all_common_modifiers", text="Apply All",   icon='FILE_TICK')
-
         # ← Left
         pie.operator("modifier_pie.toggle_display_wire",       text="Toggle Wire",  icon='SHADING_WIRE')
 
+        # ↙ Bottom-Left
+        pie.operator("modifier_pie.apply_all_common_modifiers", text="Apply All",   icon='FILE_TICK')
+        
         # ↖ Top-Left
         pie.operator("view3d.toggle_overlay",            text="Toggle Overlay", icon='OVERLAY')
 
