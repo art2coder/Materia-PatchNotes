@@ -1,15 +1,21 @@
 # operators/__init__.py
-from .grouping import OBJECT_OT_group_by_empty, OBJECT_OT_ungroup_empty
 
-classes = (
-    OBJECT_OT_group_by_empty,
-    OBJECT_OT_ungroup_empty,
-)
+from .grouping          import register as register_group,   unregister as unregister_group
+from .popup_modifiers  import register as register_mods,    unregister as unregister_mods
+from .pie_menu         import register as register_pie,     unregister as unregister_pie
 
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
+    # 1) grouping operators
+    register_group()
+    # 2) modifier popup operators
+    register_mods()
+    # 3) pie menu definition
+    register_pie()
 
 def unregister():
-    for cls in reversed(classes):
-        bpy.utils.unregister_class(cls)
+    # 1) pie menu
+    unregister_pie()
+    # 2) popup modifiers
+    unregister_mods()
+    # 3) grouping
+    unregister_group()
