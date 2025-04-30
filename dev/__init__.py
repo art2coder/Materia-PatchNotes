@@ -14,12 +14,15 @@ bl_info = {
 import bpy
 from .operators import grouping
 from . import ui
+from .utils.keymap import register_keymaps, unregister_keymaps
 
 def register():
     grouping.register()
     ui.register()
+    register_keymaps()
 
 def unregister():
+    register_keymaps()
     ui.unregister()
     grouping.unregister()
 
