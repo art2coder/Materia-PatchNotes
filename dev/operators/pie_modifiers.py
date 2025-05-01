@@ -20,7 +20,7 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
         pie.operator("modifier_pie.curve_bevel_popup",         text="Curve Bevel",  icon='CURVE_DATA')
 
         # ← Left
-        pie.separator()
+        pie.operator("modifier_pie.rotational_array", text="Rot Array", icon='MOD_ARRAY')
 
          # ↖ Top-Left
         pie.operator("view3d.toggle_overlay",            text="Toggle Overlay", icon='OVERLAY')
