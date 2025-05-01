@@ -39,7 +39,7 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         empty_parent.name = f"RotArray_CTRL_{obj.name}"
 
         # 3) Create empty for rotation offset
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=cursor)
+        bpy.ops.object.empty_add(type='SINGLE_ARROW', location=cursor)
         empty_rotation = context.active_object
         empty_rotation.name = f"RotArray_Empty_{obj.name}"
 
