@@ -3,6 +3,7 @@
 from .grouping          import register as register_group,   unregister as unregister_group
 from .popup_modifiers  import register as register_mods,    unregister as unregister_mods
 from .pie_menu         import register as register_pie,     unregister as unregister_pie
+from .pie_pivot import register as register_pivot, unregister as unregister_pivot
 
 def register():
     # 1) grouping operators
@@ -11,8 +12,10 @@ def register():
     register_mods()
     # 3) pie menu definition
     register_pie()
+    register_pivot()
 
 def unregister():
+    unregister_pivot()
     # 1) pie menu
     unregister_pie()
     # 2) popup modifiers
