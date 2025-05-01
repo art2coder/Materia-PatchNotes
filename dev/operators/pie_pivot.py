@@ -35,15 +35,7 @@ class PIE_MT_pivot_pie(bpy.types.Menu):
         pie.operator("modifier_pie.cursor_to_origin", text="Reset", icon='FILE_REFRESH')
         
 
-classes = (
-    PIE_MT_pivot_pie,
-    PIVOT_OT_toggle_pivot,
-    PIVOT_OT_cursor_to_selection,
-    PIVOT_OT_cursor_to_origin,
-    PIVOT_OT_selection_to_cursor,
-    OBJECT_OT_origin_to_geometry,
-    OBJECT_OT_origin_to_cursor,
-)
+classes = (PIE_MT_pivot_pie,)
 
 def register():
     for cls in classes:
