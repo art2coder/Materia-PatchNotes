@@ -6,12 +6,12 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
 
     def draw(self, context):
         pie = self.layout.menu_pie()
-
-        # ↑ Top
-        pie.menu("PIE_MT_boolean_submenu", text="Boolean...", icon='MOD_BOOLEAN')
     
         # ↗ Top-Right
         pie.operator("modifier_pie.add_bevel_popup",           text="Bevel",        icon='MOD_BEVEL')
+
+        # ↑ Top
+        pie.menu("PIE_MT_boolean_submenu", text="Boolean...", icon='MOD_BOOLEAN')
   
         # → Right
         pie.operator("modifier_pie.mirror_live_popup",         text="Mirror",       icon='MOD_MIRROR')
