@@ -8,7 +8,7 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
         pie = self.layout.menu_pie()
 
         # ↑ Top
-        pie.operator("modifier_pie.add_boolean_popup",         text="Boolean",      icon='MOD_BOOLEAN')
+        pie.menu("PIE_MT_boolean_submenu", text="Boolean...", icon='MOD_BOOLEAN')
     
         # ↗ Top-Right
         pie.operator("modifier_pie.add_bevel_popup",           text="Bevel",        icon='MOD_BEVEL')
@@ -20,7 +20,7 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
         pie.operator("modifier_pie.curve_bevel_popup",         text="Curve Bevel",  icon='CURVE_DATA')
 
         # ← Left
-        pie.operator("modifier_pie.toggle_display_wire",       text="Toggle Wire",  icon='SHADING_WIRE')
+        pie.separator()
 
          # ↖ Top-Left
         pie.operator("view3d.toggle_overlay",            text="Toggle Overlay", icon='OVERLAY')
@@ -31,12 +31,31 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
         # ↓ Bottom
         pie.operator("modifier_pie.add_subsurf_popup",         text="Subsurf",      icon='MOD_SUBSURF')
 
-        
 
-classes = (PIE_MT_modifiers_pie,)
+# 🧩 Boolean 서브 파이메뉴
+class PIE_MT_boolean_submenu(bpy.types.Menu):
+    bl_label = "Boolean Submenu"
+    bl_idname = "PIE_MT_boolean_submenu"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.operator("modifier_pie.add_boolean_popup", text="Boolean", icon='MOD_BOOLEAN')
+        layout.operator("modifier_pie.toggle_display_wire", text="Toggle Wire", icon='SHADING_WIRE')
+
+
+
+# 🔧 등록/해제
+classes = (
+    PIE_MT_modifiers_pie,
+    PIE_MT_boolean_submenu,
+)
+
+
 
 def register():
-    bpy.utils.register_class(PIE_MT_modifiers_pie)
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.utils.unregister_class(PIE_MT_modifiers_pie)
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
