@@ -26,13 +26,20 @@ def register_keymaps():
     )
     addon_keymaps.append((km_obj, kmi))
 
-    # 2) Global Window: Q → Pie Menu
+    # 2) Q → Modifier Pie Menu
     km_win = kc.keymaps.new(name='Window', space_type='EMPTY')
     kmi = km_win.keymap_items.new(
         'wm.call_menu_pie', type='Q', value='PRESS'
     )
     kmi.properties.name = "PIE_MT_modifiers_pie"
     addon_keymaps.append((km_win, kmi))
+
+    # 3) W → Pivot Pie Menu
+    km_obj = kc.keymaps.new(name='Object Mode', space_type='EMPTY')
+    kmi = km_obj.keymap_items.new('wm.call_menu_pie', type='W', value='PRESS')
+    kmi.properties.name = 'PIE_MT_pivot_pie'
+    addon_keymaps.append((km_obj, kmi))
+
 
 
 def unregister_keymaps():
