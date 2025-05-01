@@ -16,7 +16,9 @@ bl_info = {
 # v1.1.3 - Added Ungroup_by_Empty (Alt + G)
 # v1.1.4 - Fix crash issues
 # v1.1.5 - Added Revive Gizmo 
-# v1.1.6 - Fix Pivot pie menu  
+# v1.1.6 - Fix Pivot pie menu 
+# v1.1.7 - Refactoring process
+# v1.1.8 - Added Rotational array
 
 import bpy
 from mathutils import Vector
