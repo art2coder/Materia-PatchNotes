@@ -5,14 +5,9 @@ from mathutils import Euler
 # ─────────────────────────────────────────────
 # 회전 어레이
 # ─────────────────────────────────────────────
-
-import bpy
-import math
-from mathutils import Euler
-
 class OBJECT_OT_rotational_array(bpy.types.Operator):
     """3D 커서 기준 회전 어레이 (Empty Offset + 드라이버)"""
-    bl_idname = "object.rotational_array"
+    bl_idname = "modifier_pie.rotational_array"
     bl_label = "Rotational Array"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -78,6 +73,7 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
+
 
 
 # ─────────────────────────────────────────────
