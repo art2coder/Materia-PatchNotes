@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Modifier Pie Kit",
     "author": "EJ x ChatGPT",
-    "version": (1, 1, 6),
+    "version": (1, 1, 8),
     "blender": (4, 2, 9),
     "location": "Q / W / G / Alt+G / Clt+G in 3D View",
     "description": "A kit of pie-style menus for Modifiers, Pivot tools and Group/Ungroup",
