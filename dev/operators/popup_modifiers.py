@@ -6,7 +6,7 @@ from mathutils import Euler
 # 회전 어레이
 # ─────────────────────────────────────────────
 class OBJECT_OT_rotational_array(bpy.types.Operator):
-    """3D 커서 기준 회전 어레이 (Empty Offset + 드라이버)"""
+    """3D 커서 기준 회전 어레이"""
     bl_idname = "modifier_pie.rotational_array"
     bl_label = "Rotational Array"
     bl_options = {'REGISTER', 'UNDO'}
