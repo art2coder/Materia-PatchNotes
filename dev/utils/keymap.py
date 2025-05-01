@@ -60,7 +60,10 @@ def register_keymaps():
 
 def unregister_keymaps():
     for km, kmi in addon_keymaps:
-        if kmi in km.keymap_items:
+        try:
             km.keymap_items.remove(kmi)
+        except Exception:
+            pass
     addon_keymaps.clear()
+
 
