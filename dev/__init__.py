@@ -12,6 +12,7 @@ import bpy
 from . import ui
 from .operators import register as register_ops, unregister as unregister_ops
 from .utils.keymap import register_keymaps, unregister_keymaps
+from .pie_pivot import register as register_pivot, unregister as unregister_pivot
 
 def register():
     register_ops()          
