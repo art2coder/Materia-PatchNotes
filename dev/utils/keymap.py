@@ -43,6 +43,20 @@ def register_keymaps():
     kmi.properties.name = "PIE_MT_modifiers_pie"
     addon_keymaps.append((km_win, kmi))
 
+    # 3) W → Pivot Pie Menu
+    km_obj = kc.keymaps.new(name='Object Mode', space_type='EMPTY')
+    kmi = km_obj.keymap_items.new('wm.call_menu_pie', type='W', value='PRESS')
+    kmi.properties.name = 'PIE_MT_pivot_pie'
+    addon_keymaps.append((km_obj, kmi))
+
+    # Edit Mode (Mesh 모드)에도 동일한 W 키 등록
+    km_edit = kc.keymaps.new(name='Mesh', space_type='EMPTY')
+    kmi = km_edit.keymap_items.new('wm.call_menu_pie', type='W', value='PRESS')
+    kmi.properties.name = 'PIE_MT_pivot_pie'
+    addon_keymaps.append((km_edit, kmi))
+
+
+
 
 def unregister_keymaps():
     for km, kmi in addon_keymaps:
