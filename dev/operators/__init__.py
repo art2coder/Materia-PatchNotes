@@ -2,7 +2,7 @@
 
 from .grouping          import register as register_group,   unregister as unregister_group
 from .popup_modifiers  import register as register_mods,    unregister as unregister_mods
-from .pie_menu         import register as register_pie,     unregister as unregister_pie
+from .pie_modifiers         import register as register_pie,     unregister as unregister_pie
 from .pie_pivot import register as register_pivot, unregister as unregister_pivot
 
 def register():
