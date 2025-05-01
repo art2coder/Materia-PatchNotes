@@ -6,9 +6,13 @@ from mathutils import Euler
 # 회전 어레이
 # ─────────────────────────────────────────────
 
+import bpy
+import math
+from mathutils import Euler
+
 class OBJECT_OT_rotational_array(bpy.types.Operator):
     """3D 커서 기준 회전 어레이 (Empty Offset + 드라이버)"""
-    bl_idname = "modifier_pie.rotational_array"
+    bl_idname = "object.rotational_array"
     bl_label = "Rotational Array"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -19,7 +23,6 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        # 오브젝트 모드 + 하나의 오브젝트만 선택되었을 때만 활성화
         return (
             context.mode == 'OBJECT'
             and context.active_object is not None
@@ -31,35 +34,51 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         obj = context.active_object
         cursor = context.scene.cursor.location.copy()
 
+        # 1) Apply transforms, set origin to cursor
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=cursor)
-        empty = context.active_object
-        empty.name = f"RotArray_Empty_{obj.name}"
+        # 2) Create empty for parenting (ARROWS)
+        bpy.ops.object.empty_add(type='ARROWS', location=cursor)
+        empty_parent = context.active_object
+        empty_parent.name = f"RotArray_CTRL_{obj.name}"
 
+        # 3) Create empty for rotation offset
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=cursor)
+        empty_rotation = context.active_object
+        empty_rotation.name = f"RotArray_Empty_{obj.name}"
+
+        # 4) Add array modifier to the object
         if "RotationalArray" in obj.modifiers:
             obj.modifiers.remove(obj.modifiers["RotationalArray"])
         mod = obj.modifiers.new("RotationalArray", 'ARRAY')
         mod.use_relative_offset = False
         mod.use_object_offset   = True
-        mod.offset_object       = empty
+        mod.offset_object       = empty_rotation
         mod.count               = self.count
 
-        empty.rotation_euler = Euler((0, 0, math.radians(360.0 / self.count)), 'XYZ')
+        # 5) Initial rotation
+        empty_rotation.rotation_euler = Euler((0, 0, math.radians(360.0 / self.count)), 'XYZ')
 
-        drv = empty.driver_add("rotation_euler", 2).driver
+        # 6) Add driver to rotation based on modifier count
+        drv = empty_rotation.driver_add("rotation_euler", 2).driver
         var = drv.variables.new()
         var.name = "cnt"
         var.targets[0].id_type   = 'OBJECT'
         var.targets[0].id        = obj
-        var.targets[0].data_path = f'modifiers[\"{mod.name}\"].count'
+        var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
+        # 7) Parenting
+        obj.parent = empty_parent
+        empty_rotation.parent = empty_parent
+
+        self.report({'INFO'}, "Rotational array and control empties created.")
         return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
+
 
 # ─────────────────────────────────────────────
 # Boolean Modifier
