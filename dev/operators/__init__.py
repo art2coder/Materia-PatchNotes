@@ -4,21 +4,18 @@ from .grouping          import register as register_group,   unregister as unreg
 from .popup_modifiers  import register as register_mods,    unregister as unregister_mods
 from .pie_modifiers         import register as register_pie,     unregister as unregister_pie
 from .pie_pivot import register as register_pivot, unregister as unregister_pivot
+from .popup_pivot import register as register_pivot_ops, unregister as unregister_pivot_ops
 
 def register():
-    # 1) grouping operators
     register_group()
-    # 2) modifier popup operators
     register_mods()
-    # 3) pie menu definition
     register_pie()
     register_pivot()
+    register_pivot_ops()
 
 def unregister():
+    unregister_pivot_ops()
     unregister_pivot()
-    # 1) pie menu
     unregister_pie()
-    # 2) popup modifiers
     unregister_mods()
-    # 3) grouping
     unregister_group()
