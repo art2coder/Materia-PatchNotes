@@ -3,7 +3,7 @@ bl_info = {
     "author": "EJ x ChatGPT",
     "version": (1, 1, 8),
     "blender": (4, 2, 9),
-    "location": "Q / W / G / Alt+G / Clt+G in 3D View",
+    "location": "Q / W /Alt+G / Clt+G in 3D View",
     "description": "A kit of pie-style menus for Modifiers, Pivot tools and Group/Ungroup",
     "category": "3D View"
 }
