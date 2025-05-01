@@ -17,6 +17,16 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         default=6, min=1
     )
 
+    @classmethod
+    def poll(cls, context):
+        # 오브젝트 모드 + 하나의 오브젝트만 선택되었을 때만 활성화
+        return (
+            context.mode == 'OBJECT'
+            and context.active_object is not None
+            and len(context.selected_objects) == 1
+            and context.active_object.type == 'MESH'
+        )
+
     def execute(self, context):
         obj = context.active_object
         cursor = context.scene.cursor.location.copy()
