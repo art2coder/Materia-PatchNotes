@@ -40,7 +40,7 @@ class SmartSelectCycleOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 
-classes = (OBJECT_OT_smart_select_cycle,)
+classes = (SmartSelectCycleOperator,)
 
 
 
