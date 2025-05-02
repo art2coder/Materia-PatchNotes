@@ -17,8 +17,8 @@ bl_info = {
 # v1.1.5 - Added Revive Gizmo 
 # v1.1.6 - Fix Pivot pie menu 
 # v1.1.7 - Refactoring process
-# v1.1.8 - Added Rotational array
-
+# v1.1.8 - Added Rotational array 
+# v1.1.9 - Added Select Tool (B)
 import bpy
 from . import ui
 from .operators import register as register_ops, unregister as unregister_ops
