@@ -1,12 +1,3 @@
-
-bl_info = {
-    "name": "Smart Select Tool Cycler",
-    "blender": (4, 2, 0),
-    "category": "3D View",
-    "author": "ChatGPT",
-    "description": "Cycle between Box, Circle, and Lasso select tools with B key; remembers last tool when switching back.",
-}
-
 import bpy
 
 class SmartSelectCycleOperator(bpy.types.Operator):
@@ -48,27 +39,15 @@ class SmartSelectCycleOperator(bpy.types.Operator):
 
         return {'FINISHED'}
 
-addon_keymaps = []
+
+classes = (OBJECT_OT_smart_select_cycle,)
+
+
 
 def register():
-    bpy.utils.register_class(SmartSelectCycleOperator)
-
-    # Register keymap in Object Mode and Edit Mode (Mesh)
-    wm = bpy.context.window_manager
-    kc = wm.keyconfigs.addon
-    if kc:
-        for mode in ["Object Mode", "Mesh"]:
-            km = kc.keymaps.new(name=mode, space_type='EMPTY')
-            kmi = km.keymap_items.new("object.smart_select_cycle", type='B', value='PRESS')
-            addon_keymaps.append((km, kmi))
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.utils.unregister_class(SmartSelectCycleOperator)
-
-    # Remove keymaps
-    for km, kmi in addon_keymaps:
-        km.keymap_items.remove(kmi)
-    addon_keymaps.clear()
-
-if __name__ == "__main__":
-    register()
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
