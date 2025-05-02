@@ -5,6 +5,7 @@ from .popup_modifiers    import register as register_mods,         unregister as
 from .pie_modifiers      import register as register_pie,          unregister as unregister_pie
 from .popup_pivot        import register as register_pivot_ops,    unregister as unregister_pivot_ops
 from .pie_pivot          import register as register_pivot,        unregister as unregister_pivot
+from .select_tools import register as register_select, unregister as unregister_select
 
 def register():
     register_group()
@@ -12,8 +13,10 @@ def register():
     register_pie()
     register_pivot_ops()   
     register_pivot()
+    register_select()
 
 def unregister():
+    unregister_select()
     unregister_pivot()
     unregister_pivot_ops()  
     unregister_pie()
