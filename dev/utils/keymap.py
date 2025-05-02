@@ -55,7 +55,11 @@ def register_keymaps():
     kmi.properties.name = 'PIE_MT_pivot_pie'
     addon_keymaps.append((km_edit, kmi))
 
-
+    # 4) Smart Select: B key in Object & Edit mode
+    for mode in ["Object Mode", "Mesh"]:
+        km = kc.keymaps.new(name=mode, space_type='EMPTY')
+        kmi = km.keymap_items.new("object.smart_select_cycle", type='B', value='PRESS')
+        addon_keymaps.append((km, kmi))
 
 
 def unregister_keymaps():
