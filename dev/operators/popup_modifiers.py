@@ -1,7 +1,8 @@
 import bpy
 import bmesh
 import math
-from mathutils import Euler
+from mathutils import Euler, Vector
+
 
 # ─────────────────────────────────────────────
 # 회전 어레이
