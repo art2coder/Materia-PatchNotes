@@ -8,6 +8,7 @@ from .pie_pivot          import register as register_pivot,        unregister as
 from .tools_extra import register as register_select, unregister as unregister_select
 from . import auto_sorter
 from . import clean_view
+from . import camera_quick_settings
 
 def register():
     register_group()
@@ -18,8 +19,10 @@ def register():
     register_select()
     auto_sorter.register()
     clean_view.register()
+    camera_quick_settings.register()
 
 def unregister():
+    camera_quick_settings.unregister()
     clean_view.unregister()
     auto_sorter.unregister()
     unregister_select()
