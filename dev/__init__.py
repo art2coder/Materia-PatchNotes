@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Modifier Pie Kit",
     "author": "EJ",
-    "version": (1, 1, 8),
+    "version": (1, 2, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Object > Modifier Pie Kit",
     "description": "A pie of modifier shortcuts and rotational array",
@@ -19,6 +19,7 @@ bl_info = {
 # v1.1.7 - Refactoring process
 # v1.1.8 - Added Rotational array 
 # v1.1.9 - Added Select Tool (B)
+# v1.2.0 - Added Extras Tool
 import bpy
 from . import ui
 from .operators import register as register_ops, unregister as unregister_ops
