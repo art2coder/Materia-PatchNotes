@@ -89,8 +89,9 @@ class MODIFIER_PIE_OT_toggle_edges_display(bpy.types.Operator):
     bl_description = "지오메트리 와이어프레임 표시를 토글합니다."
 
     def execute(self, context):
-        overlay = context.space_data.overlay
-        overlay.show_wireframes = not overlay.show_wireframes
+        space = get_view3d_space(context)
+        if space:
+            space.overlay.show_wireframes = not space.overlay.show_wireframes
         return {'FINISHED'}
 
 # --- 패널 ---
@@ -156,7 +157,19 @@ def update_cleanview_lineart_toggle(self, context):
 
         for obj in context.scene.objects:
             if obj.type == 'MESH':
-                obj.hide_viewport = context.scene.show_cleanview_lineart_toggle
+                obj.hide_viewport = False
+
+        def delayed_hide():
+            for obj in bpy.context.scene.objects:
+                if obj.type == 'MESH':
+                    obj.hide_viewport = True
+            return None
+
+        bpy.app.timers.register(delayed_hide, first_interval=0.1)
+
+        area = next((a for a in context.screen.areas if a.type == 'VIEW_3D'), None)
+        if area:
+            area.spaces.active.shading.type = 'SOLID'
 
 # --- 등록 / 해제 ---
 classes = [
