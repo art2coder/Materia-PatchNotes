@@ -39,8 +39,7 @@ def restore_clean_view_settings(space, settings):
     space.shading.type = settings.get('type', 'SOLID')
     space.shading.background_type = settings['background_type']
     space.shading.color_type = 'OBJECT'
- = settings['light']
-    space.shading.color_type = 'OBJECT'  # 컬러를 OBJECT로 롤백
+    space.shading.light = settings['light']
     space.shading.background_color = settings['background_color']
     space.overlay.show_overlays = settings['show_overlays']
 
