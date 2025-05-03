@@ -6,7 +6,7 @@ from .pie_modifiers      import register as register_pie,          unregister as
 from .popup_pivot        import register as register_pivot_ops,    unregister as unregister_pivot_ops
 from .pie_pivot          import register as register_pivot,        unregister as unregister_pivot
 from .tools_extra import register as register_select, unregister as unregister_select
-from .operators import auto_sorter
+from . import auto_sorter
 
 def register():
     register_group()
