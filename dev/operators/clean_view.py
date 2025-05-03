@@ -77,7 +77,7 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
     bl_label = "클린 뷰 모드"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "정리"
+    bl_category = "Extras"
 
     def draw(self, context):
         layout = self.layout
