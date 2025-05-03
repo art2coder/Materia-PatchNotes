@@ -30,16 +30,21 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         obj = context.active_object
         cursor = context.scene.cursor.location.copy()
 
-        # 1) Apply transforms and set origin to cursor
+        # 1) Apply transforms, set origin to cursor
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 
-        # 2) Create rotation empty
+        # 2) Create empty for parenting (ARROWS)
+        bpy.ops.object.empty_add(type='ARROWS', location=cursor)
+        empty_parent = context.active_object
+        empty_parent.name = f"RotArray_CTRL_{obj.name}"
+
+        # 3) Create empty for rotation offset
         bpy.ops.object.empty_add(type='SINGLE_ARROW', location=cursor)
         empty_rotation = context.active_object
         empty_rotation.name = f"RotArray_Empty_{obj.name}"
 
-        # 3) Add array modifier
+        # 4) Add array modifier to the object
         if "RotationalArray" in obj.modifiers:
             obj.modifiers.remove(obj.modifiers["RotationalArray"])
         mod = obj.modifiers.new("RotationalArray", 'ARRAY')
@@ -48,10 +53,10 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         mod.offset_object       = empty_rotation
         mod.count               = self.count
 
-        # 4) Set initial rotation
+        # 5) Initial rotation
         empty_rotation.rotation_euler = Euler((0, 0, math.radians(360.0 / self.count)), 'XYZ')
 
-        # 5) Add driver
+        # 6) Add driver to rotation based on modifier count
         drv = empty_rotation.driver_add("rotation_euler", 2).driver
         var = drv.variables.new()
         var.name = "cnt"
@@ -60,33 +65,15 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
-        # 6) Create new unique collection
-        base_name = f"RotArray_{obj.name}"
-        index = 1
-        while f"{base_name}_{index}" in bpy.data.collections:
-            index += 1
-        collection_name = f"{base_name}_{index}"
-        new_coll = bpy.data.collections.new(collection_name)
-        context.scene.collection.children.link(new_coll)
+        # 7) Parenting
+        obj.parent = empty_parent
+        empty_rotation.parent = empty_parent
 
-        # 7) Add objects to new collection
-        new_coll.objects.link(obj)
-        new_coll.objects.link(empty_rotation)
-
-        # 8) Remove from previous collections
-        for coll in obj.users_collection:
-            if coll != new_coll:
-                coll.objects.unlink(obj)
-        for coll in empty_rotation.users_collection:
-            if coll != new_coll:
-                coll.objects.unlink(empty_rotation)
-
-        self.report({'INFO'}, f"Rotational array created in collection '{collection_name}'.")
+        self.report({'INFO'}, "Rotational array and control empties created.")
         return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
-
 # ─────────────────────────────────────────────
 # Boolean Modifier
 # ─────────────────────────────────────────────
