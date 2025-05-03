@@ -7,7 +7,7 @@ from mathutils import Euler
 # ─────────────────────────────────────────────
 
 class OBJECT_OT_rotational_array(bpy.types.Operator):
-    """3D 커서 기준 회전 어레이"""
+    """3D 커서 기준 회전 어레이 (축 선택 포함)"""
     bl_idname = "modifier_pie.rotational_array"
     bl_label = "Rotational Array"
     bl_options = {'REGISTER', 'UNDO'}
@@ -16,6 +16,16 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         name="Count",
         default=6,
         min=1
+    )
+
+    axis: bpy.props.EnumProperty(
+        name="Axis",
+        items=[
+            ('X', "X Axis", "Rotate around X Axis"),
+            ('Y', "Y Axis", "Rotate around Y Axis"),
+            ('Z', "Z Axis", "Rotate around Z Axis")
+        ],
+        default='Z'
     )
 
     @classmethod
@@ -27,6 +37,12 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
             context.active_object.type == 'MESH'
         )
 
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row(align=True)
+        row.prop(self, "axis", expand=True)
+        layout.prop(self, "count")
+
     def execute(self, context):
         obj = context.active_object
         cursor = context.scene.cursor.location.copy()
@@ -36,7 +52,7 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 
         # 2) Create rotation empty at cursor
-        bpy.ops.object.empty_add(type='SINGLE_ARROW', location=cursor)
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=cursor)
         empty_rotation = context.active_object
         empty_rotation.name = f"RotArray_Empty_{obj.name}"
 
@@ -50,10 +66,19 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         mod.count = self.count
 
         # 4) Set initial rotation on the empty
-        empty_rotation.rotation_euler = Euler((0, 0, math.radians(360.0 / self.count)), 'XYZ')
+        rot_angle = math.radians(360.0 / self.count)
+        if self.axis == 'X':
+            empty_rotation.rotation_euler = Euler((rot_angle, 0, 0), 'XYZ')
+            drv_index = 0
+        elif self.axis == 'Y':
+            empty_rotation.rotation_euler = Euler((0, rot_angle, 0), 'XYZ')
+            drv_index = 1
+        else:
+            empty_rotation.rotation_euler = Euler((0, 0, rot_angle), 'XYZ')
+            drv_index = 2
 
         # 5) Add driver to update rotation dynamically
-        drv = empty_rotation.driver_add("rotation_euler", 2).driver
+        drv = empty_rotation.driver_add("rotation_euler", drv_index).driver
         var = drv.variables.new()
         var.name = "cnt"
         var.targets[0].id_type = 'OBJECT'
@@ -61,14 +86,14 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
-        # 6) Parent obj and rotation empty to obj (itself)
+        # 6) Parent empty to object for grouped transform
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         empty_rotation.select_set(True)
-        bpy.context.view_layer.objects.active = obj
+        context.view_layer.objects.active = obj
         bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
 
-        self.report({'INFO'}, "Rotational array created (self-parented to object).")
+        self.report({'INFO'}, f"Rotational array created around {self.axis}-axis.")
         return {'FINISHED'}
 
     def invoke(self, context, event):
