@@ -5,6 +5,7 @@ from mathutils import Euler
 # ─────────────────────────────────────────────
 # 회전 어레이
 # ─────────────────────────────────────────────
+
 class OBJECT_OT_rotational_array(bpy.types.Operator):
     """3D 커서 기준 회전 어레이"""
     bl_idname = "modifier_pie.rotational_array"
@@ -29,16 +30,16 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         obj = context.active_object
         cursor = context.scene.cursor.location.copy()
 
-        # 1) Apply transforms, set origin to cursor
+        # 1) Apply transforms and set origin to cursor
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 
-        # 3) Create empty for rotation offset
+        # 2) Create rotation empty
         bpy.ops.object.empty_add(type='SINGLE_ARROW', location=cursor)
         empty_rotation = context.active_object
         empty_rotation.name = f"RotArray_Empty_{obj.name}"
 
-        # 4) Add array modifier to the object
+        # 3) Add array modifier
         if "RotationalArray" in obj.modifiers:
             obj.modifiers.remove(obj.modifiers["RotationalArray"])
         mod = obj.modifiers.new("RotationalArray", 'ARRAY')
@@ -47,10 +48,10 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         mod.offset_object       = empty_rotation
         mod.count               = self.count
 
-        # 5) Initial rotation
+        # 4) Set initial rotation
         empty_rotation.rotation_euler = Euler((0, 0, math.radians(360.0 / self.count)), 'XYZ')
 
-        # 6) Add driver to rotation based on modifier count
+        # 5) Add driver
         drv = empty_rotation.driver_add("rotation_euler", 2).driver
         var = drv.variables.new()
         var.name = "cnt"
@@ -59,11 +60,28 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
-        # ⚠️ 7) Parenting → 삭제됨 (empty_rotation, obj 모두 독립)
-        # obj.parent = empty_parent
-        # empty_rotation.parent = empty_parent
+        # 6) Create new unique collection
+        base_name = f"RotArray_{obj.name}"
+        index = 1
+        while f"{base_name}_{index}" in bpy.data.collections:
+            index += 1
+        collection_name = f"{base_name}_{index}"
+        new_coll = bpy.data.collections.new(collection_name)
+        context.scene.collection.children.link(new_coll)
 
-        self.report({'INFO'}, "Rotational array and control empties created (no parenting).")
+        # 7) Add objects to new collection
+        new_coll.objects.link(obj)
+        new_coll.objects.link(empty_rotation)
+
+        # 8) Remove from previous collections
+        for coll in obj.users_collection:
+            if coll != new_coll:
+                coll.objects.unlink(obj)
+        for coll in empty_rotation.users_collection:
+            if coll != new_coll:
+                coll.objects.unlink(empty_rotation)
+
+        self.report({'INFO'}, f"Rotational array created in collection '{collection_name}'.")
         return {'FINISHED'}
 
     def invoke(self, context, event):
