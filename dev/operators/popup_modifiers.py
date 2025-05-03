@@ -65,15 +65,16 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
-        # 7) Parenting
-        obj.parent = empty_parent
-        empty_rotation.parent = empty_parent
+        # ⚠️ 7) Parenting → 삭제됨 (empty_rotation, obj 모두 독립)
+        # obj.parent = empty_parent
+        # empty_rotation.parent = empty_parent
 
-        self.report({'INFO'}, "Rotational array and control empties created.")
+        self.report({'INFO'}, "Rotational array and control empties created (no parenting).")
         return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
+
 # ─────────────────────────────────────────────
 # Boolean Modifier
 # ─────────────────────────────────────────────
