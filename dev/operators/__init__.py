@@ -7,6 +7,7 @@ from .popup_pivot        import register as register_pivot_ops,    unregister as
 from .pie_pivot          import register as register_pivot,        unregister as unregister_pivot
 from .tools_extra import register as register_select, unregister as unregister_select
 from . import auto_sorter
+from . import clean_view
 
 def register():
     register_group()
@@ -16,8 +17,10 @@ def register():
     register_pivot()
     register_select()
     auto_sorter.register()
+    clean_view.register()
 
 def unregister():
+    clean_view.unregister()
     auto_sorter.unregister()
     unregister_select()
     unregister_pivot()
