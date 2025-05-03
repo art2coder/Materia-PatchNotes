@@ -95,7 +95,7 @@ class AUTO_SORTER_PT_panel(bpy.types.Panel):
     bl_idname = "AUTO_SORTER_PT_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "정리"
+    bl_category = "Extras"
 
     def draw(self, context):
         layout = self.layout
