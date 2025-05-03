@@ -8,11 +8,6 @@ from mathutils import Euler, Vector
 # 회전 어레이
 # ─────────────────────────────────────────────
 
-import bpy
-import bmesh
-import math
-from mathutils import Euler, Vector
-
 class OBJECT_OT_rotational_array(bpy.types.Operator):
     """3D 커서 기준 회전 어레이"""
     bl_idname = "modifier_pie.rotational_array"
