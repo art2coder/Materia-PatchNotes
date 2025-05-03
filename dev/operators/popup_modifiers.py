@@ -7,7 +7,7 @@ from mathutils import Euler
 # ─────────────────────────────────────────────
 
 class OBJECT_OT_rotational_array(bpy.types.Operator):
-    """3D 커서 기준 회전 어레이"""
+    """3D 커서 기준 회전 어레이 (면 수직 방향 정렬 포함)"""
     bl_idname = "modifier_pie.rotational_array"
     bl_label = "Rotational Array"
     bl_options = {'REGISTER', 'UNDO'}
@@ -27,6 +27,24 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
             context.active_object.type == 'MESH'
         )
 
+    def get_closest_face_normal(self, obj, cursor):
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        eval_obj = obj.evaluated_get(depsgraph)
+        mesh = eval_obj.to_mesh()
+
+        closest_face = None
+        closest_dist = float('inf')
+
+        for face in mesh.polygons:
+            center = sum((mesh.vertices[i].co for i in face.vertices), Vector()) / len(face.vertices)
+            dist = (center - cursor).length_squared
+            if dist < closest_dist:
+                closest_dist = dist
+                closest_face = face
+
+        eval_obj.to_mesh_clear()
+        return closest_face.normal if closest_face else None
+
     def execute(self, context):
         obj = context.active_object
         cursor = context.scene.cursor.location.copy()
@@ -35,12 +53,22 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 
-        # 2) Create rotation empty at cursor
+        # 2) Reorient object based on closest face normal (if available)
+        normal = self.get_closest_face_normal(obj, cursor)
+        if normal is not None:
+            up = Vector((0, 0, 1))
+            axis = normal.cross(up)
+            angle = normal.angle(up)
+            if axis.length > 0 and angle > 1e-5:
+                rot_matrix = Matrix.Rotation(angle, 4, axis)
+                obj.matrix_world = rot_matrix @ obj.matrix_world
+
+        # 3) Create rotation empty at cursor
         bpy.ops.object.empty_add(type='SINGLE_ARROW', location=cursor)
         empty_rotation = context.active_object
         empty_rotation.name = f"RotArray_Empty_{obj.name}"
 
-        # 3) Add array modifier
+        # 4) Add array modifier
         if "RotationalArray" in obj.modifiers:
             obj.modifiers.remove(obj.modifiers["RotationalArray"])
         mod = obj.modifiers.new("RotationalArray", 'ARRAY')
@@ -49,10 +77,10 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         mod.offset_object = empty_rotation
         mod.count = self.count
 
-        # 4) Set initial rotation on the empty
+        # 5) Set initial rotation on the empty
         empty_rotation.rotation_euler = Euler((0, 0, math.radians(360.0 / self.count)), 'XYZ')
 
-        # 5) Add driver to update rotation dynamically
+        # 6) Add driver to update rotation dynamically
         drv = empty_rotation.driver_add("rotation_euler", 2).driver
         var = drv.variables.new()
         var.name = "cnt"
@@ -61,19 +89,18 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
-        # 6) Parent obj and rotation empty to obj (itself)
+        # 7) Parent obj and rotation empty to obj (itself)
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         empty_rotation.select_set(True)
         bpy.context.view_layer.objects.active = obj
         bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
 
-        self.report({'INFO'}, "Rotational array created (self-parented to object).")
+        self.report({'INFO'}, "Rotational array created with local face-normal alignment.")
         return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
-
 # ─────────────────────────────────────────────
 # Boolean Modifier
 # ─────────────────────────────────────────────
