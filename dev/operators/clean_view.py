@@ -72,24 +72,12 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
 
         return {'FINISHED'}
 
-class MODIFIER_PIE_OT_create_lineart_collection(bpy.types.Operator):
-    bl_idname = "modifier_pie.create_lineart_collection"
-    bl_label = "라인아트 콜렉션 생성"
-    bl_description = "LineArt라는 이름의 콜렉션을 생성하고 기본 컬렉션에 연결합니다."
-
-    def execute(self, context):
-        if "LineArt" not in bpy.data.collections:
-            col = bpy.data.collections.new("LineArt")
-            # 'Scene Collection' 최상위에 직접 연결
-            bpy.context.scene.collection.children.link(col)
-        return {'FINISHED'}
-
 # --- 패널 ---
 class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
     bl_label = "클린 뷰 모드"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Extra"
+    bl_category = "정리"
 
     def draw(self, context):
         layout = self.layout
@@ -97,30 +85,29 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(context.scene, "show_cleanview_wire_toggle", toggle=True, text="와이어", icon="SHADING_WIRE")
-        if "LineArt" in bpy.data.collections:
-            row.prop(context.scene, "show_cleanview_lineart_toggle", toggle=True, text="라인아트", icon="MOD_LINEART")
-
-        layout.prop(context.scene, "cleanview_wireframe_factor", text="Wireframe")
-
-        row = layout.row()
-        row.enabled = "LineArt" not in bpy.data.collections
-        row.operator("modifier_pie.create_lineart_collection", text="라인아트 생성", icon="ADD")
+        row.prop(context.scene, "show_cleanview_lineart_toggle", toggle=True, text="라인아트", icon="MOD_LINEART")
+        if "LineArt" not in bpy.data.collections:
+            row.enabled = False
 
 # --- 추가 기능: 와이어/라인아트 토글 ---
 def update_cleanview_wire_toggle(self, context):
     area = next((a for a in context.screen.areas if a.type == 'VIEW_3D'), None)
     if not area:
         return
+
     space = area.spaces.active
     if context.scene.show_cleanview_wire_toggle:
         space.shading.type = 'WIREFRAME'
         space.shading.show_xray = False
+        # 라인아트 토글 끄기
+        context.scene.show_cleanview_lineart_toggle = False
     else:
         space.shading.type = 'SOLID'
 
 def update_cleanview_lineart_toggle(self, context):
     col = bpy.data.collections.get("LineArt")
     if col:
+        # 와이어 토글 끄기
         if context.scene.show_cleanview_lineart_toggle:
             context.scene.show_cleanview_wire_toggle = False
 
@@ -142,10 +129,10 @@ def update_cleanview_lineart_toggle(self, context):
         if layer_collection:
             layer_collection.exclude = not context.scene.show_cleanview_lineart_toggle
 
+
 # --- 등록 / 해제 ---
 classes = [
     MODIFIER_PIE_OT_toggle_clean_view,
-    MODIFIER_PIE_OT_create_lineart_collection,
     MODIFIER_PIE_PT_clean_view_panel,
 ]
 
@@ -163,22 +150,12 @@ def register():
         default=False,
         update=update_cleanview_lineart_toggle
     )
-
-    bpy.types.Scene.cleanview_wireframe_factor = bpy.props.FloatProperty(
-        name="Wireframe Factor",
-        description="와이어프레임 표시 강도",
-        default=1.0,
-        min=0.0,
-        max=1.0
-    )
-
     for cls in classes:
         bpy.utils.register_class(cls)
 
 def unregister():
     del bpy.types.Scene.show_cleanview_wire_toggle
     del bpy.types.Scene.show_cleanview_lineart_toggle
-    del bpy.types.Scene.cleanview_wireframe_factor
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
