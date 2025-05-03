@@ -74,9 +74,6 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
-
-
-
 # ─────────────────────────────────────────────
 # Boolean Modifier
 # ─────────────────────────────────────────────
