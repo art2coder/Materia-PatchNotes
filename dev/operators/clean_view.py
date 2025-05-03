@@ -36,7 +36,7 @@ def apply_clean_view_settings(space):
     space.overlay.show_overlays = False
 
 def restore_clean_view_settings(space, settings):
-    space.shading.type = settings.get('type', 'SOLID')
+    space.shading.type = settings.get('type', ' SOLID')
     space.shading.background_type = settings['background_type']
     studio_light = settings.get('studio_light')
     if studio_light:
@@ -91,18 +91,26 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
 
 # --- 추가 기능: 와이어/라인아트 토글 ---
 def update_cleanview_wire_toggle(self, context):
-    space = get_view3d_space(context)
-    if space:
-        if context.scene.show_cleanview_wire_toggle:
-            space.shading.type = 'WIREFRAME'
-            space.shading.show_xray = False
-        else:
-            space.shading.type = 'SOLID'
+    area = next((a for a in context.screen.areas if a.type == 'VIEW_3D'), None)
+    if not area:
+        return
+
+    space = area.spaces.active
+    if context.scene.show_cleanview_wire_toggle:
+        space.shading.type = 'WIREFRAME'
+        space.shading.show_xray = False
+        # 라인아트 토글 끄기
+        context.scene.show_cleanview_lineart_toggle = False
+    else:
+        space.shading.type = 'SOLID'
 
 def update_cleanview_lineart_toggle(self, context):
     col = bpy.data.collections.get("LineArt")
     if col:
-        # 'Exclude from View Layer' 는 해당 콜렉션이 현재 View Layer에 포함되는지에 따라 결정됨
+        # 와이어 토글 끄기
+        if context.scene.show_cleanview_lineart_toggle:
+            context.scene.show_cleanview_wire_toggle = False
+
         layer_collection = None
         view_layer = context.view_layer
 
