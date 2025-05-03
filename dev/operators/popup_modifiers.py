@@ -1,13 +1,10 @@
 import bpy
-import bmesh
 import math
-from mathutils import Euler, Vector
-
+from mathutils import Euler
 
 # ─────────────────────────────────────────────
 # 회전 어레이
 # ─────────────────────────────────────────────
-
 class OBJECT_OT_rotational_array(bpy.types.Operator):
     """3D 커서 기준 회전 어레이"""
     bl_idname = "modifier_pie.rotational_array"
@@ -16,8 +13,7 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
 
     count: bpy.props.IntProperty(
         name="Count",
-        default=6,
-        min=1
+        default=6, min=1
     )
 
     @classmethod
@@ -29,77 +25,54 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
             and context.active_object.type == 'MESH'
         )
 
-    def get_closest_face_normal(self, obj, cursor):
-        depsgraph = bpy.context.evaluated_depsgraph_get()
-        eval_obj = obj.evaluated_get(depsgraph)
-        mesh = eval_obj.to_mesh()
-        bm = bmesh.new()
-        bm.from_mesh(mesh)
-        bm.faces.ensure_lookup_table()
-
-        closest_face = None
-        min_dist = float('inf')
-        for face in bm.faces:
-            center = face.calc_center_median()
-            dist = (center - cursor).length
-            if dist < min_dist:
-                min_dist = dist
-                closest_face = face
-
-        bm.free()
-        return closest_face.normal.normalized() if closest_face else None
-
-    def dominant_axis(self, normal: Vector):
-        abs_vals = [abs(normal.x), abs(normal.y), abs(normal.z)]
-        return abs_vals.index(max(abs_vals))  # 0: X, 1: Y, 2: Z
-
     def execute(self, context):
         obj = context.active_object
         cursor = context.scene.cursor.location.copy()
 
-        # 1. Apply transforms
+        # 1) Apply transforms, set origin to cursor
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
 
-        # 2. Create rotation controller empty at cursor
+        # 2) Create empty for parenting (ARROWS)
+        bpy.ops.object.empty_add(type='ARROWS', location=cursor)
+        empty_parent = context.active_object
+        empty_parent.name = f"RotArray_CTRL_{obj.name}"
+
+        # 3) Create empty for rotation offset
         bpy.ops.object.empty_add(type='SINGLE_ARROW', location=cursor)
         empty_rotation = context.active_object
         empty_rotation.name = f"RotArray_Empty_{obj.name}"
 
-        # 3. Create array modifier
+        # 4) Add array modifier to the object
         if "RotationalArray" in obj.modifiers:
             obj.modifiers.remove(obj.modifiers["RotationalArray"])
         mod = obj.modifiers.new("RotationalArray", 'ARRAY')
         mod.use_relative_offset = False
-        mod.use_object_offset = True
-        mod.offset_object = empty_rotation
-        mod.count = self.count
+        mod.use_object_offset   = True
+        mod.offset_object       = empty_rotation
+        mod.count               = self.count
 
-        # 4. Determine axis
-        normal = self.get_closest_face_normal(obj, cursor)
-        axis_index = self.dominant_axis(normal) if normal else 2  # default Z
-        angle_rad = math.radians(360.0 / self.count)
+        # 5) Initial rotation
+        empty_rotation.rotation_euler = Euler((0, 0, math.radians(360.0 / self.count)), 'XYZ')
 
-        # 5. Set initial rotation
-        empty_rotation.rotation_euler = Euler((0.0, 0.0, 0.0), 'XYZ')
-        rot = list(empty_rotation.rotation_euler)
-        rot[axis_index] = angle_rad
-        empty_rotation.rotation_euler = Euler(rot, 'XYZ')
-
-        # 6. Add driver
-        drv = empty_rotation.driver_add("rotation_euler", axis_index).driver
+        # 6) Add driver to rotation based on modifier count
+        drv = empty_rotation.driver_add("rotation_euler", 2).driver
         var = drv.variables.new()
         var.name = "cnt"
-        var.targets[0].id_type = 'OBJECT'
-        var.targets[0].id = obj
+        var.targets[0].id_type   = 'OBJECT'
+        var.targets[0].id        = obj
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
-        self.report({'INFO'}, f"Rotational array created around {'XYZ'[axis_index]} axis.")
+        # 7) Parenting
+        obj.parent = empty_parent
+        empty_rotation.parent = empty_parent
+
+        self.report({'INFO'}, "Rotational array and control empties created.")
         return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
-
 
 
 
