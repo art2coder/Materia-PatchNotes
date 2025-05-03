@@ -31,7 +31,7 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         cursor = context.scene.cursor.location.copy()
 
         # 1) Apply transforms, set origin to cursor
-        bpy.ops.object.transform_apply(scale=True)
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         
 
         # 2) Create empty for parenting (ARROWS)
