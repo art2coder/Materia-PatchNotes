@@ -83,7 +83,7 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         mod.offset_object = empty_rotation
         mod.count = self.count
 
-        # 5) Determine best axis
+            # 5) Determine best axis
         normal = self.get_closest_face_normal(obj, cursor)
         if normal:
             axis_index = self.dominant_axis(normal)
@@ -91,8 +91,13 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
             axis_index = 2  # fallback to Z
 
         axis_labels = ['X', 'Y', 'Z']
+
+        # 💡 반드시 초기화!
+        empty_rotation.rotation_euler = Euler((0.0, 0.0, 0.0), 'XYZ')
+
+        # 설정된 축만 회전
         angle_rad = math.radians(360.0 / self.count)
-        rot_euler = [0, 0, 0]
+        rot_euler = [0.0, 0.0, 0.0]
         rot_euler[axis_index] = angle_rad
         empty_rotation.rotation_euler = Euler(rot_euler, 'XYZ')
 
@@ -104,6 +109,7 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         var.targets[0].id = obj
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
+
 
         # 7) Parenting
         obj.parent = empty_parent
