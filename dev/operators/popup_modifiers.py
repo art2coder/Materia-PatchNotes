@@ -1,10 +1,12 @@
 import bpy
+import bmesh
 import math
 from mathutils import Euler
 
 # ─────────────────────────────────────────────
 # 회전 어레이
 # ─────────────────────────────────────────────
+
 class OBJECT_OT_rotational_array(bpy.types.Operator):
     """3D 커서 기준 회전 어레이"""
     bl_idname = "modifier_pie.rotational_array"
@@ -24,6 +26,34 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
             and len(context.selected_objects) == 1
             and context.active_object.type == 'MESH'
         )
+
+    def get_closest_face_normal(self, obj, cursor):
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        eval_obj = obj.evaluated_get(depsgraph)
+        mesh = eval_obj.to_mesh()
+        bm = bmesh.new()
+        bm.from_mesh(mesh)
+        bm.verts.ensure_lookup_table()
+        bm.faces.ensure_lookup_table()
+
+        closest_face = None
+        min_dist = float('inf')
+        for face in bm.faces:
+            center = face.calc_center_median()
+            dist = (center - cursor).length
+            if dist < min_dist:
+                min_dist = dist
+                closest_face = face
+
+        if closest_face:
+            return closest_face.normal.normalized()
+        else:
+            return None
+
+    def dominant_axis(self, normal: Vector):
+        abs_vals = [abs(normal.x), abs(normal.y), abs(normal.z)]
+        axis_index = abs_vals.index(max(abs_vals))
+        return axis_index  # 0: X, 1: Y, 2: Z
 
     def execute(self, context):
         obj = context.active_object
@@ -48,19 +78,29 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
             obj.modifiers.remove(obj.modifiers["RotationalArray"])
         mod = obj.modifiers.new("RotationalArray", 'ARRAY')
         mod.use_relative_offset = False
-        mod.use_object_offset   = True
-        mod.offset_object       = empty_rotation
-        mod.count               = self.count
+        mod.use_object_offset = True
+        mod.offset_object = empty_rotation
+        mod.count = self.count
 
-        # 5) Initial rotation
-        empty_rotation.rotation_euler = Euler((0, 0, math.radians(360.0 / self.count)), 'XYZ')
+        # 5) Determine best axis
+        normal = self.get_closest_face_normal(obj, cursor)
+        if normal:
+            axis_index = self.dominant_axis(normal)
+        else:
+            axis_index = 2  # fallback to Z
 
-        # 6) Add driver to rotation based on modifier count
-        drv = empty_rotation.driver_add("rotation_euler", 2).driver
+        axis_labels = ['X', 'Y', 'Z']
+        angle_rad = math.radians(360.0 / self.count)
+        rot_euler = [0, 0, 0]
+        rot_euler[axis_index] = angle_rad
+        empty_rotation.rotation_euler = Euler(rot_euler, 'XYZ')
+
+        # 6) Add driver
+        drv = empty_rotation.driver_add("rotation_euler", axis_index).driver
         var = drv.variables.new()
         var.name = "cnt"
-        var.targets[0].id_type   = 'OBJECT'
-        var.targets[0].id        = obj
+        var.targets[0].id_type = 'OBJECT'
+        var.targets[0].id = obj
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
@@ -68,11 +108,12 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         obj.parent = empty_parent
         empty_rotation.parent = empty_parent
 
-        self.report({'INFO'}, "Rotational array and control empties created.")
+        self.report({'INFO'}, f"Rotational array created around {axis_labels[axis_index]} axis.")
         return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
+
 
 
 
