@@ -87,7 +87,7 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
         row.prop(context.scene, "show_cleanview_wire_toggle", toggle=True, text="와이어", icon="SHADING_WIRE")
         row.prop(context.scene, "show_cleanview_lineart_toggle", toggle=True, text="라인아트", icon="MOD_LINEART")
         if "LineArt" not in bpy.data.collections:
-            row.enabled = False
+            row.prop(context.scene, "show_cleanview_lineart_toggle", toggle=True, text="라인아트", icon="MOD_LINEART").enabled = False
 
 # --- 추가 기능: 와이어/라인아트 토글 ---
 def update_cleanview_wire_toggle(self, context):
@@ -96,11 +96,11 @@ def update_cleanview_wire_toggle(self, context):
         return
 
     space = area.spaces.active
+
+    # 라인아트 토글은 강제로 끄지 않음 (와이어 단독 활성화 허용)
     if context.scene.show_cleanview_wire_toggle:
         space.shading.type = 'WIREFRAME'
         space.shading.show_xray = False
-        # 라인아트 토글 끄기
-        context.scene.show_cleanview_lineart_toggle = False
     else:
         space.shading.type = 'SOLID'
 
