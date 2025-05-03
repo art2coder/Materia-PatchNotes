@@ -61,12 +61,18 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
-        self.report({'INFO'}, "Rotational array created without controller.")
+        # 6) Parent obj and rotation empty to obj (itself)
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        empty_rotation.select_set(True)
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+
+        self.report({'INFO'}, "Rotational array created (self-parented to object).")
         return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
-
 
 # ─────────────────────────────────────────────
 # Boolean Modifier
