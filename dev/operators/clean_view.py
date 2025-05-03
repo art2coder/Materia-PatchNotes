@@ -32,11 +32,11 @@ def apply_clean_view_settings(space):
         pass
     space.shading.background_color = (1.0, 1.0, 1.0)
     space.shading.light = 'FLAT'
-    space.shading.color_type = 'OBJECT'
+    space.shading.color_type = 'MATERIAL'
     space.overlay.show_overlays = False
 
 def restore_clean_view_settings(space, settings):
-    space.shading.type = settings.get('type', ' SOLID')
+    space.shading.type = settings.get('type', 'SOLID')
     space.shading.background_type = settings['background_type']
     studio_light = settings.get('studio_light')
     if studio_light:
@@ -52,8 +52,8 @@ def restore_clean_view_settings(space, settings):
 # --- 오퍼레이터 ---
 class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_clean_view"
-    bl_label = "클린 뷰 토글"
-    bl_description = "뷰포트를 클린 모드로 전환하거나 복원합니다."
+    bl_label = "배경색 토글"
+    bl_description = "배경을 흰색으로 설정하거나 원래대로 복원합니다."
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -72,6 +72,27 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class MODIFIER_PIE_OT_toggle_mesh_visibility(bpy.types.Operator):
+    bl_idname = "modifier_pie.toggle_mesh_visibility"
+    bl_label = "메쉬 숨기기"
+    bl_description = "모든 메쉬 오브젝트를 보이거나 숨깁니다."
+
+    def execute(self, context):
+        for obj in context.scene.objects:
+            if obj.type == 'MESH':
+                obj.hide_viewport = not obj.hide_viewport
+        return {'FINISHED'}
+
+class MODIFIER_PIE_OT_toggle_edges_display(bpy.types.Operator):
+    bl_idname = "modifier_pie.toggle_edges_display"
+    bl_label = "Edges"
+    bl_description = "지오메트리 와이어프레임 표시를 토글합니다."
+
+    def execute(self, context):
+        overlay = context.space_data.overlay
+        overlay.show_wireframes = not overlay.show_wireframes
+        return {'FINISHED'}
+
 # --- 패널 ---
 class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
     bl_label = "클린 뷰 모드"
@@ -81,7 +102,7 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("modifier_pie.toggle_clean_view", text="클린 뷰 토글", icon="HIDE_OFF")
+        layout.operator("modifier_pie.toggle_clean_view", text="배경색 토글", icon="HIDE_OFF")
 
         row = layout.row(align=True)
         row.prop(context.scene, "show_cleanview_wire_toggle", toggle=True, text="와이어", icon="SHADING_WIRE")
@@ -89,25 +110,29 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
         if "LineArt" not in bpy.data.collections:
             row.enabled = False
 
-# --- 추가 기능: 와이어/라인아트 토글 ---
+        row = layout.row(align=True)
+        row.operator("modifier_pie.toggle_edges_display", text="Edges")
+        row.operator("modifier_pie.toggle_mesh_visibility", text="메쉬 숨기기")
+
+# --- 와이어/라인아트 토글 ---
 def update_cleanview_wire_toggle(self, context):
     area = next((a for a in context.screen.areas if a.type == 'VIEW_3D'), None)
     if not area:
         return
-
     space = area.spaces.active
     if context.scene.show_cleanview_wire_toggle:
         space.shading.type = 'WIREFRAME'
         space.shading.show_xray = False
-        # 라인아트 토글 끄기
         context.scene.show_cleanview_lineart_toggle = False
+        for obj in context.scene.objects:
+            if obj.type == 'MESH':
+                obj.hide_viewport = False
     else:
         space.shading.type = 'SOLID'
 
 def update_cleanview_lineart_toggle(self, context):
     col = bpy.data.collections.get("LineArt")
     if col:
-        # 와이어 토글 끄기
         if context.scene.show_cleanview_lineart_toggle:
             context.scene.show_cleanview_wire_toggle = False
 
@@ -129,10 +154,15 @@ def update_cleanview_lineart_toggle(self, context):
         if layer_collection:
             layer_collection.exclude = not context.scene.show_cleanview_lineart_toggle
 
+        for obj in context.scene.objects:
+            if obj.type == 'MESH':
+                obj.hide_viewport = context.scene.show_cleanview_lineart_toggle
 
 # --- 등록 / 해제 ---
 classes = [
     MODIFIER_PIE_OT_toggle_clean_view,
+    MODIFIER_PIE_OT_toggle_mesh_visibility,
+    MODIFIER_PIE_OT_toggle_edges_display,
     MODIFIER_PIE_PT_clean_view_panel,
 ]
 
@@ -150,12 +180,14 @@ def register():
         default=False,
         update=update_cleanview_lineart_toggle
     )
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
 def unregister():
     del bpy.types.Scene.show_cleanview_wire_toggle
     del bpy.types.Scene.show_cleanview_lineart_toggle
+
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
