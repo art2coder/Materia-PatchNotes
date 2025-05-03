@@ -61,24 +61,12 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
-        # 6) Create controller empty at cursor
-        bpy.ops.object.empty_add(type='ARROWS', location=cursor)
-        empty_parent = context.active_object
-        empty_parent.name = f"RotArray_CTRL_{obj.name}"
-
-        # 7) Parent both object and rotation empty to controller
-        bpy.context.view_layer.objects.active = obj
-        obj.select_set(True)
-        empty_rotation.select_set(True)
-        empty_parent.select_set(True)
-        bpy.context.view_layer.update()
-        bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
-
-        self.report({'INFO'}, "Rotational array with controller created.")
+        self.report({'INFO'}, "Rotational array created without controller.")
         return {'FINISHED'}
 
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
+
 
 # ─────────────────────────────────────────────
 # Boolean Modifier
