@@ -85,9 +85,8 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(context.scene, "show_cleanview_wire_toggle", toggle=True, text="와이어", icon="SHADING_WIRE")
-        row.prop(context.scene, "show_cleanview_lineart_toggle", toggle=True, text="라인아트", icon="MOD_LINEART")
-        if "LineArt" not in bpy.data.collections:
-            row.prop(context.scene, "show_cleanview_lineart_toggle", toggle=True, text="라인아트", icon="MOD_LINEART").enabled = False
+        if "LineArt" in bpy.data.collections:
+            row.prop(context.scene, "show_cleanview_lineart_toggle", toggle=True, text="라인아트", icon="MOD_LINEART")
 
 # --- 추가 기능: 와이어/라인아트 토글 ---
 def update_cleanview_wire_toggle(self, context):
