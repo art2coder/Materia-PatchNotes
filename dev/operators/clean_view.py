@@ -81,7 +81,7 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("modifier_pie.toggle_clean_view", text="클린 뷰 토글", icon="HIDE_OFF")
+        layout.operator("modifier_pie.toggle_clean_view", text="배경색 토글", icon="HIDE_OFF")
 
         row = layout.row(align=True)
         row.prop(context.scene, "show_cleanview_wire_toggle", toggle=True, text="와이어", icon="SHADING_WIRE")
