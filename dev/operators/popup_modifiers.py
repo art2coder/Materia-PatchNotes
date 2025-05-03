@@ -14,63 +14,67 @@ class OBJECT_OT_rotational_array(bpy.types.Operator):
 
     count: bpy.props.IntProperty(
         name="Count",
-        default=6, min=1
+        default=6,
+        min=1
     )
 
     @classmethod
     def poll(cls, context):
         return (
-            context.mode == 'OBJECT'
-            and context.active_object is not None
-            and len(context.selected_objects) == 1
-            and context.active_object.type == 'MESH'
+            context.mode == 'OBJECT' and
+            context.active_object is not None and
+            len(context.selected_objects) == 1 and
+            context.active_object.type == 'MESH'
         )
 
     def execute(self, context):
         obj = context.active_object
         cursor = context.scene.cursor.location.copy()
 
-        # 1) Apply transforms, set origin to cursor
+        # 1) Apply transforms and move origin to 3D cursor
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
-        
 
-        # 2) Create empty for parenting (ARROWS)
-        bpy.ops.object.empty_add(type='ARROWS', location=cursor)
-        empty_parent = context.active_object
-        empty_parent.name = f"RotArray_CTRL_{obj.name}"
-
-        # 3) Create empty for rotation offset
+        # 2) Create rotation empty at cursor
         bpy.ops.object.empty_add(type='SINGLE_ARROW', location=cursor)
         empty_rotation = context.active_object
         empty_rotation.name = f"RotArray_Empty_{obj.name}"
 
-        # 4) Add array modifier to the object
+        # 3) Add array modifier
         if "RotationalArray" in obj.modifiers:
             obj.modifiers.remove(obj.modifiers["RotationalArray"])
         mod = obj.modifiers.new("RotationalArray", 'ARRAY')
         mod.use_relative_offset = False
-        mod.use_object_offset   = True
-        mod.offset_object       = empty_rotation
-        mod.count               = self.count
+        mod.use_object_offset = True
+        mod.offset_object = empty_rotation
+        mod.count = self.count
 
-        # 5) Initial rotation
+        # 4) Set initial rotation on the empty
         empty_rotation.rotation_euler = Euler((0, 0, math.radians(360.0 / self.count)), 'XYZ')
 
-        # 6) Add driver to rotation based on modifier count
+        # 5) Add driver to update rotation dynamically
         drv = empty_rotation.driver_add("rotation_euler", 2).driver
         var = drv.variables.new()
         var.name = "cnt"
-        var.targets[0].id_type   = 'OBJECT'
-        var.targets[0].id        = obj
+        var.targets[0].id_type = 'OBJECT'
+        var.targets[0].id = obj
         var.targets[0].data_path = f'modifiers["{mod.name}"].count'
         drv.expression = "radians(360/cnt)"
 
-        # ⚠️ 7) Parenting → 삭제됨 (empty_rotation, obj 모두 독립)
-        # obj.parent = empty_parent
-        # empty_rotation.parent = empty_parent
+        # 6) Create controller empty at cursor
+        bpy.ops.object.empty_add(type='ARROWS', location=cursor)
+        empty_parent = context.active_object
+        empty_parent.name = f"RotArray_CTRL_{obj.name}"
 
-        self.report({'INFO'}, "Rotational array and control empties created (no parenting).")
+        # 7) Parent both object and rotation empty to controller
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+        empty_rotation.select_set(True)
+        empty_parent.select_set(True)
+        bpy.context.view_layer.update()
+        bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+
+        self.report({'INFO'}, "Rotational array with controller created.")
         return {'FINISHED'}
 
     def invoke(self, context, event):
