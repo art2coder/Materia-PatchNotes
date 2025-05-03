@@ -45,7 +45,7 @@ def restore_clean_view_settings(space, settings):
         except TypeError:
             pass
     space.shading.light = settings['light']
-    space.shading.color_type = settings['color_type']
+    space.shading.color_type = 'OBJECT'  # 컬러를 OBJECT로 롤백
     space.shading.background_color = settings['background_color']
     space.overlay.show_overlays = settings['show_overlays']
 
@@ -125,9 +125,6 @@ def update_cleanview_wire_toggle(self, context):
         space.shading.type = 'WIREFRAME'
         space.shading.show_xray = False
         context.scene.show_cleanview_lineart_toggle = False
-        for obj in context.scene.objects:
-            if obj.type == 'MESH':
-                obj.hide_viewport = False
     else:
         space.shading.type = 'SOLID'
 
@@ -154,18 +151,6 @@ def update_cleanview_lineart_toggle(self, context):
 
         if layer_collection:
             layer_collection.exclude = not context.scene.show_cleanview_lineart_toggle
-
-        for obj in context.scene.objects:
-            if obj.type == 'MESH':
-                obj.hide_viewport = False
-
-        def delayed_hide():
-            for obj in bpy.context.scene.objects:
-                if obj.type == 'MESH':
-                    obj.hide_viewport = True
-            return None
-
-        bpy.app.timers.register(delayed_hide, first_interval=0.1)
 
         area = next((a for a in context.screen.areas if a.type == 'VIEW_3D'), None)
         if area:
