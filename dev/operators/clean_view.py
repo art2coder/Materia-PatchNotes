@@ -1,15 +1,12 @@
 import bpy
 
-# --- 클린 뷰 설정 저장용 ---
 _clean_view_previous = {}
 
-# --- 유틸리티 함수 ---
+# --- 유틸리티 ---
 def get_view3d_space(context):
-    for area in context.screen.areas:
-        if area.type == 'VIEW_3D':
-            for space in area.spaces:
-                if space.type == 'VIEW_3D':
-                    return space
+    area = context.area
+    if area and area.type == 'VIEW_3D':
+        return area.spaces.active
     return None
 
 def store_clean_view_settings(space):
@@ -52,8 +49,8 @@ def restore_clean_view_settings(space, settings):
 # --- 오퍼레이터 ---
 class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_clean_view"
-    bl_label = "배경색 토글"
-    bl_description = "뷰포트를 2D 모드로 전환하거나 복원합니다."
+    bl_label = "배경색 전환"
+    bl_description = "이 뷰포트만 클린 뷰 모드로 전환하거나 복원"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -62,15 +59,17 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
             self.report({'WARNING'}, "3D 뷰포트를 찾을 수 없습니다.")
             return {'CANCELLED'}
 
-        key = 'global'
-        if key not in _clean_view_previous:
-            _clean_view_previous[key] = store_clean_view_settings(space)
+        area_id = str(space.as_pointer())
+
+        if not getattr(space, 'use_clean_view', False):
+            _clean_view_previous[area_id] = store_clean_view_settings(space)
             apply_clean_view_settings(space)
-            context.scene.use_clean_view = True
+            space.use_clean_view = True
         else:
-            restore_clean_view_settings(space, _clean_view_previous[key])
-            del _clean_view_previous[key]
-            context.scene.use_clean_view = False
+            if area_id in _clean_view_previous:
+                restore_clean_view_settings(space, _clean_view_previous[area_id])
+                del _clean_view_previous[area_id]
+            space.use_clean_view = False
 
         return {'FINISHED'}
 
@@ -83,58 +82,63 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        space = get_view3d_space(context)
 
-        # 🔷 눌림 상태 유지되는 버튼
+        # 커스텀 속성 기본값 설정
+        if not hasattr(space, 'use_clean_view'):
+            space.use_clean_view = False
+        if not hasattr(space, 'show_cleanview_wire_toggle'):
+            space.show_cleanview_wire_toggle = False
+        if not hasattr(space, 'show_cleanview_lineart_toggle'):
+            space.show_cleanview_lineart_toggle = False
+
         layout.operator(
             "modifier_pie.toggle_clean_view",
-            text="배경색 토글",
+            text="배경색 전환",
             icon="WORKSPACE",
-            depress=context.scene.use_clean_view
+            depress=space.use_clean_view
         )
 
         row = layout.row(align=True)
-        row.prop(context.scene, "show_cleanview_wire_toggle", toggle=True, text="와이어", icon="SHADING_WIRE")
-        row.prop(context.scene, "show_cleanview_lineart_toggle", toggle=True, text="라인아트", icon="MOD_LINEART")
+        row.prop(space, "show_cleanview_wire_toggle", toggle=True, text="와이어", icon="SHADING_WIRE")
+        row.prop(space, "show_cleanview_lineart_toggle", toggle=True, text="라인아트", icon="MOD_LINEART")
         if "LineArt" not in bpy.data.collections:
             row.enabled = False
 
-# --- 와이어/라인아트 토글 ---
-def update_cleanview_wire_toggle(self, context):
-    area = next((a for a in context.screen.areas if a.type == 'VIEW_3D'), None)
-    if not area:
-        return
+# --- 뷰포트 상태 처리 핸들러 ---
+def draw_handler(scene):
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.type == 'VIEW_3D':
+                space = area.spaces.active
+                if not hasattr(space, 'show_cleanview_wire_toggle'):
+                    continue
 
-    space = area.spaces.active
-    if context.scene.show_cleanview_wire_toggle:
-        space.shading.type = 'WIREFRAME'
-        space.shading.show_xray = False
-        context.scene.show_cleanview_lineart_toggle = False
-    else:
-        space.shading.type = 'SOLID'
+                if space.show_cleanview_wire_toggle:
+                    space.shading.type = 'WIREFRAME'
+                    space.shading.show_xray = False
+                    space.show_cleanview_lineart_toggle = False
 
-def update_cleanview_lineart_toggle(self, context):
-    col = bpy.data.collections.get("LineArt")
-    if col:
-        if context.scene.show_cleanview_lineart_toggle:
-            context.scene.show_cleanview_wire_toggle = False
+                elif space.show_cleanview_lineart_toggle:
+                    col = bpy.data.collections.get("LineArt")
+                    if col:
+                        layer_collection = None
+                        def recursive_search(layer_coll):
+                            nonlocal layer_collection
+                            if layer_coll.collection == col:
+                                layer_collection = layer_coll
+                                return True
+                            for child in layer_coll.children:
+                                if recursive_search(child):
+                                    return True
+                            return False
+                        recursive_search(bpy.context.view_layer.layer_collection)
+                        if layer_collection:
+                            layer_collection.exclude = False
+                        space.show_cleanview_wire_toggle = False
 
-        layer_collection = None
-        view_layer = context.view_layer
-
-        def recursive_search(layer_coll):
-            nonlocal layer_collection
-            if layer_coll.collection == col:
-                layer_collection = layer_coll
-                return True
-            for child in layer_coll.children:
-                if recursive_search(child):
-                    return True
-            return False
-
-        recursive_search(view_layer.layer_collection)
-
-        if layer_collection:
-            layer_collection.exclude = not context.scene.show_cleanview_lineart_toggle
+                else:
+                    space.shading.type = 'SOLID'
 
 # --- 등록 / 해제 ---
 classes = [
@@ -142,34 +146,22 @@ classes = [
     MODIFIER_PIE_PT_clean_view_panel,
 ]
 
+_draw_handle = None
+
 def register():
-    bpy.types.Scene.use_clean_view = bpy.props.BoolProperty(
-        name="배경색 활성화 여부",
-        description="현재 2D 모드인지 저장합니다.",
-        default=False
-    )
-
-    bpy.types.Scene.show_cleanview_wire_toggle = bpy.props.BoolProperty(
-        name="와이어 보기 토글",
-        description="X-Ray 없이 와이어프레임 보기",
-        default=False,
-        update=update_cleanview_wire_toggle
-    )
-
-    bpy.types.Scene.show_cleanview_lineart_toggle = bpy.props.BoolProperty(
-        name="라인아트 표시 토글",
-        description="'LineArt' 콜렉션의 보기 설정을 토글합니다.",
-        default=False,
-        update=update_cleanview_lineart_toggle
-    )
-
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    global _draw_handle
+    _draw_handle = bpy.types.SpaceView3D.draw_handler_add(
+        draw_handler, (bpy.context.scene,), 'WINDOW', 'POST_PIXEL')
+
 def unregister():
-    del bpy.types.Scene.use_clean_view
-    del bpy.types.Scene.show_cleanview_wire_toggle
-    del bpy.types.Scene.show_cleanview_lineart_toggle
+    global _draw_handle
+    if _draw_handle:
+        bpy.types.SpaceView3D.draw_handler_remove(_draw_handle, 'WINDOW')
+        _draw_handle = None
+
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
