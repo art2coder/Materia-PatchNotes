@@ -52,8 +52,8 @@ def restore_clean_view_settings(space, settings):
 # --- 오퍼레이터 ---
 class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_clean_view"
-    bl_label = "클린 뷰 토글"
-    bl_description = "뷰포트를 클린 모드로 전환하거나 복원합니다."
+    bl_label = "배경색 토글"
+    bl_description = "뷰포트를 2D 모드로 전환하거나 복원합니다."
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -76,7 +76,7 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
 
 # --- 패널 ---
 class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
-    bl_label = "클린 뷰 모드"
+    bl_label = "2D 모드"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Extras"
@@ -87,7 +87,7 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
         # 🔷 눌림 상태 유지되는 버튼
         layout.operator(
             "modifier_pie.toggle_clean_view",
-            text="클린 뷰 토글",
+            text="배경색 토글",
             icon="WORKSPACE",
             depress=context.scene.use_clean_view
         )
@@ -144,8 +144,8 @@ classes = [
 
 def register():
     bpy.types.Scene.use_clean_view = bpy.props.BoolProperty(
-        name="클린 뷰 활성화 여부",
-        description="현재 클린 뷰 모드인지 저장합니다.",
+        name="배경색 활성화 여부",
+        description="현재 2D 모드인지 저장합니다.",
         default=False
     )
 
