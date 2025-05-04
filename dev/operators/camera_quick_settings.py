@@ -33,7 +33,7 @@ class MODIFIER_PIE_PT_camera_quick_settings(bpy.types.Panel):
 
         # 카메라 투 뷰 상태 아이콘
         icon = 'HIDE_OFF' if view.lock_camera else 'HIDE_ON'
-        col.prop(view, "lock_camera", text="Camera to View", icon=icon, toggle=True)
+        col.prop(view, "lock_camera", text="카메라 시점 모드", icon=icon, toggle=True)
 
         camera = view.camera
         if camera and camera.type == 'CAMERA':
