@@ -25,6 +25,26 @@ def move_to_collection(obj, target_coll_name):
         coll.objects.unlink(obj)
     target_coll.objects.link(obj)
 
+def move_collections_to_ordered_positions():
+    scene_col = bpy.context.scene.collection
+    order = ["Cameras", "Lighting", "Images", "LineArt"]
+    existing = [col for col in order if col in bpy.data.collections and bpy.data.collections[col].name in scene_col.children.keys()]
+
+    # 기존 순서를 리스트로 가져오고 재정렬
+    sorted_children = list(scene_col.children)
+    new_children = []
+    for name in existing:
+        col = bpy.data.collections[name]
+        new_children.append(col)
+        sorted_children.remove(col)
+    sorted_children = new_children + sorted_children
+
+    # 링크 제거 후 다시 링크
+    for col in scene_col.children:
+        scene_col.children.unlink(col)
+    for col in sorted_children:
+        scene_col.children.link(col)
+
 def remove_empty_collections():
     for coll in list(bpy.data.collections):
         if not coll.objects and not coll.children and coll.name != "Collection":
@@ -39,7 +59,9 @@ def auto_sort_new_object(obj):
     elif obj.type == 'EMPTY' and obj.empty_display_type == 'IMAGE':
         move_to_collection(obj, COLLECTION_MAP['EMPTY_IMAGE'])
     elif obj.type == 'GPENCIL':
-        if 'lineart' in obj.name.lower().replace(" ", ""):
+        # LineArt 오브젝트인지 판단
+        if 'lineart' in obj.name.lower().replace(" ", "") or any(
+            m.type == 'LINEART' for m in getattr(obj, 'grease_pencil_modifiers', [])):
             move_to_collection(obj, COLLECTION_MAP['GPENCIL_LINEART'])
     elif obj.type in ROOT_TYPES:
         for coll in obj.users_collection:
@@ -48,8 +70,9 @@ def auto_sort_new_object(obj):
 
 def sort_all():
     for obj in bpy.context.scene.objects:
-        if obj.type in {'CAMERA', 'LIGHT', 'EMPTY'}:
+        if obj.type in {'CAMERA', 'LIGHT', 'EMPTY', 'GPENCIL'}:
             auto_sort_new_object(obj)
+    move_collections_to_ordered_positions()
     remove_empty_collections()
 
 def depsgraph_handler(scene):
@@ -71,6 +94,7 @@ def depsgraph_handler(scene):
             if new_count > 10:
                 percent = int((i + 1) / new_count * 100)
                 print(f"[Collection Sorter] 정리 중... {percent}%")
+        move_collections_to_ordered_positions()
         remove_empty_collections()
         depsgraph_handler._last_objs = current_objs
     except Exception as e:
