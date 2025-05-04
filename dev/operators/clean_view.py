@@ -59,6 +59,7 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
     def execute(self, context):
         space = get_view3d_space(context)
         context.area.tag_redraw()
+        context.area.tag_redraw()
         sid = get_space_id(space)
         state = _viewport_states.get(sid, {})
 
@@ -134,6 +135,11 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
             col = bpy.data.collections.get("LineArt")
             if col:
                 self.ensure_local_view_layer(context, col)
+        else:
+            # 라인아트 끄면 기존 ViewLayer로 되돌림
+            base_layer_name = context.view_layer.name.replace("_LineArt", "")
+            if base_layer_name in [vl.name for vl in context.scene.view_layers]:
+                context.window.view_layer = context.scene.view_layers[base_layer_name]
 
         space.shading.type = 'SOLID'
         _viewport_states[sid] = state
