@@ -79,11 +79,20 @@ class MODIFIER_PIE_OT_toggle_wire(bpy.types.Operator):
     bl_label = "와이어 보기 전환"
 
     def execute(self, context):
-        space = get_view3d_space(context)
+        space = get_view33d_space(context)
         sid = get_space_id(space)
         state = _viewport_states.setdefault(sid, {})
+
         state["show_cleanview_wire_toggle"] = not state.get("show_cleanview_wire_toggle", False)
         state["show_cleanview_lineart_toggle"] = False
+
+        if state["show_cleanview_wire_toggle"]:
+            space.shading.type = 'WIREFRAME'
+            space.shading.show_xray = False
+        else:
+            space.shading.type = 'SOLID'
+
+        _viewport_states[sid] = state
         return {'FINISHED'}
 
 class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
@@ -94,8 +103,29 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
         space = get_view3d_space(context)
         sid = get_space_id(space)
         state = _viewport_states.setdefault(sid, {})
+
         state["show_cleanview_lineart_toggle"] = not state.get("show_cleanview_lineart_toggle", False)
         state["show_cleanview_wire_toggle"] = False
+
+        # 라인아트 collection 보여주기 처리
+        col = bpy.data.collections.get("LineArt")
+        if col:
+            layer_collection = None
+            def recursive_search(layer_coll):
+                nonlocal layer_collection
+                if layer_coll.collection == col:
+                    layer_collection = layer_coll
+                    return True
+                for child in layer_coll.children:
+                    if recursive_search(child):
+                        return True
+                return False
+            recursive_search(bpy.context.view_layer.layer_collection)
+            if layer_collection:
+                layer_collection.exclude = not state["show_cleanview_lineart_toggle"]
+
+        space.shading.type = 'SOLID'
+        _viewport_states[sid] = state
         return {'FINISHED'}
 
 # --- 패널 ---
@@ -123,39 +153,9 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
         if "LineArt" not in bpy.data.collections:
             row.enabled = False
 
-# --- 핸들러 ---
+# --- 핸들러 (이제 상태 변경 없음) ---
 def draw_handler():
-    for window in bpy.context.window_manager.windows:
-        for area in window.screen.areas:
-            if area.type != 'VIEW_3D':
-                continue
-            space = area.spaces.active
-            sid = get_space_id(space)
-            state = _viewport_states.get(sid, {})
-
-            if state.get("show_cleanview_wire_toggle", False):
-                space.shading.type = 'WIREFRAME'
-                space.shading.show_xray = False
-
-            elif state.get("show_cleanview_lineart_toggle", False):
-                col = bpy.data.collections.get("LineArt")
-                if col:
-                    layer_collection = None
-                    def recursive_search(layer_coll):
-                        nonlocal layer_collection
-                        if layer_coll.collection == col:
-                            layer_collection = layer_coll
-                            return True
-                        for child in layer_coll.children:
-                            if recursive_search(child):
-                                return True
-                        return False
-                    recursive_search(bpy.context.view_layer.layer_collection)
-                    if layer_collection:
-                        layer_collection.exclude = False
-                space.shading.type = 'SOLID'
-            else:
-                space.shading.type = 'SOLID'
+    pass  # 상태 관찰 전용, 현재는 비워둠 또는 향후 디버그용으로 활용 가능
 
 # --- 등록 / 해제 ---
 classes = [
