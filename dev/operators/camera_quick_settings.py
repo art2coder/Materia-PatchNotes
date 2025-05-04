@@ -29,13 +29,11 @@ class MODIFIER_PIE_PT_camera_quick_settings(bpy.types.Panel):
         col = layout.column()
         col.label(text="Camera", icon='CAMERA_DATA')
         col.template_ID(scene, "camera", new="object.camera_add")
-        view.camera = scene.camera
 
-        # 카메라 투 뷰 상태 아이콘
         icon = 'HIDE_OFF' if view.lock_camera else 'HIDE_ON'
         col.prop(view, "lock_camera", text="카메라 시점 모드", icon=icon, toggle=True)
 
-        camera = view.camera
+        camera = view.camera or scene.camera
         if camera and camera.type == 'CAMERA':
             cam_data = camera.data
 
@@ -63,6 +61,7 @@ class MODIFIER_PIE_PT_camera_quick_settings(bpy.types.Panel):
 
             col.separator()
             col.prop(view, "use_camera_passepartout", text="Passepartout", toggle=True)
+
 
 classes = [
     MODIFIER_PIE_PT_camera_quick_settings,
