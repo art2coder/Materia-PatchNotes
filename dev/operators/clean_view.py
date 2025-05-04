@@ -12,6 +12,11 @@ def get_view3d_space(context):
     return None
 
 def get_space_id(space):
+    # 더 정확한 식별을 위해 window + area 조합으로 fallback 제공
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.spaces.active == space:
+                return f"{window.as_pointer()}_{area.as_pointer()}"
     return str(space.as_pointer())
 
 def store_clean_view_settings(space):
@@ -58,7 +63,6 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
 
     def execute(self, context):
         space = get_view3d_space(context)
-        context.area.tag_redraw()
         context.area.tag_redraw()
         sid = get_space_id(space)
         state = _viewport_states.get(sid, {})
