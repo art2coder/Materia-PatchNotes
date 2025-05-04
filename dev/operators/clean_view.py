@@ -105,26 +105,6 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_lineart"
     bl_label = "라인아트 전환"
 
-    def ensure_local_view_layer(self, context, col):
-        view_layer = context.view_layer
-        new_name = f"{view_layer.name}_LineArt"
-        if new_name not in [vl.name for vl in context.scene.view_layers]:
-            bpy.ops.scene.view_layer_add()
-            context.window.view_layer.name = new_name
-        layer_collection = None
-        def recursive_search(layer_coll):
-            nonlocal layer_collection
-            if layer_coll.collection == col:
-                layer_collection = layer_coll
-                return True
-            for child in layer_coll.children:
-                if recursive_search(child):
-                    return True
-            return False
-        recursive_search(context.view_layer.layer_collection)
-        if layer_collection:
-            layer_collection.exclude = False
-
     def execute(self, context):
         space = get_view3d_space(context)
         sid = get_space_id(space)
@@ -133,17 +113,21 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
         state["show_cleanview_lineart_toggle"] = not state.get("show_cleanview_lineart_toggle", False)
         state["show_cleanview_wire_toggle"] = False
 
-        # 개별 뷰포트 상태로만 작동하도록: 공간별 공간속성에 저장
-        # view_layer에서 LineArt용 collection만 포함된 새 레이어를 만듦
-        if state["show_cleanview_lineart_toggle"]:
-            col = bpy.data.collections.get("LineArt")
-            if col:
-                self.ensure_local_view_layer(context, col)
-        else:
-            # 라인아트 끄면 기존 ViewLayer로 되돌림
-            base_layer_name = context.view_layer.name.replace("_LineArt", "")
-            if base_layer_name in [vl.name for vl in context.scene.view_layers]:
-                context.window.view_layer = context.scene.view_layers[base_layer_name]
+        # 'LineArt' 콜렉션을 전체 뷰레이어에서 토글 (간섭 허용)
+        col = bpy.data.collections.get("LineArt")
+        if col:
+            def toggle_collection_in_all_layers():
+                for layer in context.scene.view_layers:
+                    def recursive(layer_coll):
+                        if layer_coll.collection == col:
+                            layer_coll.exclude = not state["show_cleanview_lineart_toggle"]
+                            return True
+                        for child in layer_coll.children:
+                            if recursive(child):
+                                return True
+                        return False
+                    recursive(layer.layer_collection)
+            toggle_collection_in_all_layers()
 
         space.shading.type = 'SOLID'
         _viewport_states[sid] = state
