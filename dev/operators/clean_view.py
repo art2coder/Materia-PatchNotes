@@ -58,7 +58,7 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
 
     def execute(self, context):
         space = get_view3d_space(context)
-        space.tag_redraw()
+        context.area.tag_redraw()
         sid = get_space_id(space)
         state = _viewport_states.get(sid, {})
 
@@ -103,7 +103,7 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
     def ensure_local_view_layer(self, context, col):
         view_layer = context.view_layer
         new_name = f"{view_layer.name}_LineArt"
-        if new_name not in bpy.data.view_layers:
+        if new_name not in [vl.name for vl in context.scene.view_layers]:
             bpy.ops.scene.view_layer_add()
             context.window.view_layer.name = new_name
         layer_collection = None
