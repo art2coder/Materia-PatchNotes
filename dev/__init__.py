@@ -20,6 +20,8 @@ bl_info = {
 # v1.1.8 - Added Rotational array 
 # v1.1.9 - Added Select Tool (B)
 # v1.2.0 - Added Extras Tool
+
+
 import bpy
 from . import ui
 from .operators import register as register_ops, unregister as unregister_ops
