@@ -85,12 +85,13 @@ class COLLECTION_SORTER_PT_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        if context.scene.enable_auto_sort:
-            layout.label(text="자동 정리 활성화")
-        else:
-            layout.label(text="자동 정리 비활성화")
-        layout.prop(context.scene, "enable_auto_sort", text="자동 정리", toggle=True)
-        layout.operator("collection_sorter.sort_all", text="지금 정리하기", icon="SORTALPHA")
+        scene = context.scene
+
+        icon = "PLAY" if scene.enable_auto_sort else "PAUSE"
+        row = layout.row(align=True)
+        row.prop(scene, "enable_auto_sort", text="자동 정리", toggle=True, icon=icon)
+
+        layout.operator("collection_sorter.sort_all", text="지금 정리하기", icon="FILE_REFRESH")
 
 class COLLECTION_SORTER_OT_sort_all(bpy.types.Operator):
     bl_idname = "collection_sorter.sort_all"
