@@ -36,7 +36,7 @@ def apply_clean_view_settings(space):
     space.overlay.show_overlays = False
 
 def restore_clean_view_settings(space, settings):
-    space.shading.type = settings.get('type', ' SOLID')
+    space.shading.type = settings.get('type', 'SOLID')
     space.shading.background_type = settings['background_type']
     studio_light = settings.get('studio_light')
     if studio_light:
@@ -52,7 +52,7 @@ def restore_clean_view_settings(space, settings):
 # --- 오퍼레이터 ---
 class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_clean_view"
-    bl_label = "배경색 토글"
+    bl_label = "클린 뷰 토글"
     bl_description = "뷰포트를 클린 모드로 전환하거나 복원합니다."
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -66,22 +66,31 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
         if key not in _clean_view_previous:
             _clean_view_previous[key] = store_clean_view_settings(space)
             apply_clean_view_settings(space)
+            context.scene.use_clean_view = True
         else:
             restore_clean_view_settings(space, _clean_view_previous[key])
             del _clean_view_previous[key]
+            context.scene.use_clean_view = False
 
         return {'FINISHED'}
 
 # --- 패널 ---
 class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
-    bl_label = "2D 모드"
+    bl_label = "클린 뷰 모드"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Extras"
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("modifier_pie.toggle_clean_view", text="배경색 토글", icon="HIDE_OFF")
+
+        # 🔷 눌림 상태 유지되는 버튼
+        layout.operator(
+            "modifier_pie.toggle_clean_view",
+            text="클린 뷰 토글",
+            icon="WORKSPACE",
+            depress=context.scene.use_clean_view
+        )
 
         row = layout.row(align=True)
         row.prop(context.scene, "show_cleanview_wire_toggle", toggle=True, text="와이어", icon="SHADING_WIRE")
@@ -89,7 +98,7 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
         if "LineArt" not in bpy.data.collections:
             row.enabled = False
 
-# --- 추가 기능: 와이어/라인아트 토글 ---
+# --- 와이어/라인아트 토글 ---
 def update_cleanview_wire_toggle(self, context):
     area = next((a for a in context.screen.areas if a.type == 'VIEW_3D'), None)
     if not area:
@@ -99,7 +108,6 @@ def update_cleanview_wire_toggle(self, context):
     if context.scene.show_cleanview_wire_toggle:
         space.shading.type = 'WIREFRAME'
         space.shading.show_xray = False
-        # 라인아트 토글 끄기
         context.scene.show_cleanview_lineart_toggle = False
     else:
         space.shading.type = 'SOLID'
@@ -107,7 +115,6 @@ def update_cleanview_wire_toggle(self, context):
 def update_cleanview_lineart_toggle(self, context):
     col = bpy.data.collections.get("LineArt")
     if col:
-        # 와이어 토글 끄기
         if context.scene.show_cleanview_lineart_toggle:
             context.scene.show_cleanview_wire_toggle = False
 
@@ -129,7 +136,6 @@ def update_cleanview_lineart_toggle(self, context):
         if layer_collection:
             layer_collection.exclude = not context.scene.show_cleanview_lineart_toggle
 
-
 # --- 등록 / 해제 ---
 classes = [
     MODIFIER_PIE_OT_toggle_clean_view,
@@ -137,6 +143,12 @@ classes = [
 ]
 
 def register():
+    bpy.types.Scene.use_clean_view = bpy.props.BoolProperty(
+        name="클린 뷰 활성화 여부",
+        description="현재 클린 뷰 모드인지 저장합니다.",
+        default=False
+    )
+
     bpy.types.Scene.show_cleanview_wire_toggle = bpy.props.BoolProperty(
         name="와이어 보기 토글",
         description="X-Ray 없이 와이어프레임 보기",
@@ -150,10 +162,12 @@ def register():
         default=False,
         update=update_cleanview_lineart_toggle
     )
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
 def unregister():
+    del bpy.types.Scene.use_clean_view
     del bpy.types.Scene.show_cleanview_wire_toggle
     del bpy.types.Scene.show_cleanview_lineart_toggle
     for cls in reversed(classes):
