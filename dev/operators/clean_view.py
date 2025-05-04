@@ -58,6 +58,7 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
 
     def execute(self, context):
         space = get_view3d_space(context)
+        space.tag_redraw()
         sid = get_space_id(space)
         state = _viewport_states.get(sid, {})
 
@@ -99,6 +100,26 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_lineart"
     bl_label = "라인아트 전환"
 
+    def ensure_local_view_layer(self, context, col):
+        view_layer = context.view_layer
+        new_name = f"{view_layer.name}_LineArt"
+        if new_name not in bpy.data.view_layers:
+            bpy.ops.scene.view_layer_add()
+            context.window.view_layer.name = new_name
+        layer_collection = None
+        def recursive_search(layer_coll):
+            nonlocal layer_collection
+            if layer_coll.collection == col:
+                layer_collection = layer_coll
+                return True
+            for child in layer_coll.children:
+                if recursive_search(child):
+                    return True
+            return False
+        recursive_search(context.view_layer.layer_collection)
+        if layer_collection:
+            layer_collection.exclude = False
+
     def execute(self, context):
         space = get_view3d_space(context)
         sid = get_space_id(space)
@@ -107,22 +128,12 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
         state["show_cleanview_lineart_toggle"] = not state.get("show_cleanview_lineart_toggle", False)
         state["show_cleanview_wire_toggle"] = False
 
-        # 라인아트 collection 보여주기 처리
-        col = bpy.data.collections.get("LineArt")
-        if col:
-            layer_collection = None
-            def recursive_search(layer_coll):
-                nonlocal layer_collection
-                if layer_coll.collection == col:
-                    layer_collection = layer_coll
-                    return True
-                for child in layer_coll.children:
-                    if recursive_search(child):
-                        return True
-                return False
-            recursive_search(bpy.context.view_layer.layer_collection)
-            if layer_collection:
-                layer_collection.exclude = not state["show_cleanview_lineart_toggle"]
+        # 개별 뷰포트 상태로만 작동하도록: 공간별 공간속성에 저장
+        # view_layer에서 LineArt용 collection만 포함된 새 레이어를 만듦
+        if state["show_cleanview_lineart_toggle"]:
+            col = bpy.data.collections.get("LineArt")
+            if col:
+                self.ensure_local_view_layer(context, col)
 
         space.shading.type = 'SOLID'
         _viewport_states[sid] = state
@@ -150,12 +161,10 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator("modifier_pie.toggle_wire", text="와이어", icon="SHADING_WIRE", depress=state["show_cleanview_wire_toggle"])
         row.operator("modifier_pie.toggle_lineart", text="라인아트", icon="MOD_LINEART", depress=state["show_cleanview_lineart_toggle"])
-        if "LineArt" not in bpy.data.collections:
-            row.enabled = False
 
-# --- 핸들러 (이제 상태 변경 없음) ---
+# --- 핸들러 (비워둠) ---
 def draw_handler():
-    pass  # 상태 관찰 전용, 현재는 비워둠 또는 향후 디버그용으로 활용 가능
+    pass
 
 # --- 등록 / 해제 ---
 classes = [
