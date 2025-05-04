@@ -3,17 +3,15 @@ import bpy
 _clean_view_previous = {}
 _viewport_states = {}
 
-
+# --- 유틸리티 함수 ---
 def get_view3d_space(context):
     area = context.area
     if area and area.type == 'VIEW_3D':
         return area.spaces.active
     return None
 
-
 def get_space_id(space):
     return str(space.as_pointer())
-
 
 def store_clean_view_settings(space):
     return {
@@ -26,7 +24,6 @@ def store_clean_view_settings(space):
         'type': space.shading.type,
     }
 
-
 def apply_clean_view_settings(space):
     space.shading.type = 'SOLID'
     space.shading.background_type = 'VIEWPORT'
@@ -38,7 +35,6 @@ def apply_clean_view_settings(space):
     space.shading.light = 'FLAT'
     space.shading.color_type = 'OBJECT'
     space.overlay.show_overlays = False
-
 
 def restore_clean_view_settings(space, settings):
     space.shading.type = settings.get('type', 'SOLID')
@@ -54,9 +50,7 @@ def restore_clean_view_settings(space, settings):
     space.shading.background_color = settings['background_color']
     space.overlay.show_overlays = settings['show_overlays']
 
-
-# ------------------------- 오퍼레이터 -------------------------
-
+# --- 오퍼레이터들 ---
 class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_clean_view"
     bl_label = "배경색 전환"
@@ -91,11 +85,8 @@ class MODIFIER_PIE_OT_toggle_wire(bpy.types.Operator):
         space = get_view3d_space(context)
         sid = get_space_id(space)
         state = _viewport_states.setdefault(sid, {})
-
-        current = state.get("show_cleanview_wire_toggle", False)
-        state["show_cleanview_wire_toggle"] = not current
+        state["show_cleanview_wire_toggle"] = not state.get("show_cleanview_wire_toggle", False)
         state["show_cleanview_lineart_toggle"] = False
-
         _viewport_states[sid] = state
         return {'FINISHED'}
 
@@ -109,17 +100,12 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
         space = get_view3d_space(context)
         sid = get_space_id(space)
         state = _viewport_states.setdefault(sid, {})
-
-        current = state.get("show_cleanview_lineart_toggle", False)
-        state["show_cleanview_lineart_toggle"] = not current
+        state["show_cleanview_lineart_toggle"] = not state.get("show_cleanview_lineart_toggle", False)
         state["show_cleanview_wire_toggle"] = False
-
         _viewport_states[sid] = state
         return {'FINISHED'}
 
-
-# ------------------------- 패널 -------------------------
-
+# --- UI 패널 ---
 class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
     bl_label = "2D 모드"
     bl_space_type = 'VIEW_3D'
@@ -159,10 +145,8 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
         if "LineArt" not in bpy.data.collections:
             row.enabled = False
 
-
-# ------------------------- 핸들러 -------------------------
-
-def draw_handler(scene):
+# --- 핸들러 ---
+def draw_handler():
     for window in bpy.context.window_manager.windows:
         for area in window.screen.areas:
             if area.type != 'VIEW_3D':
@@ -174,6 +158,7 @@ def draw_handler(scene):
             if state.get("show_cleanview_wire_toggle", False):
                 space.shading.type = 'WIREFRAME'
                 space.shading.show_xray = False
+
             elif state.get("show_cleanview_lineart_toggle", False):
                 col = bpy.data.collections.get("LineArt")
                 if col:
@@ -191,12 +176,11 @@ def draw_handler(scene):
                     if layer_collection:
                         layer_collection.exclude = False
                 space.shading.type = 'SOLID'
+
             else:
                 space.shading.type = 'SOLID'
 
-
-# ------------------------- 등록/해제 -------------------------
-
+# --- 등록/해제 ---
 classes = [
     MODIFIER_PIE_OT_toggle_clean_view,
     MODIFIER_PIE_OT_toggle_wire,
@@ -212,7 +196,7 @@ def register():
 
     global _draw_handle
     _draw_handle = bpy.types.SpaceView3D.draw_handler_add(
-        draw_handler, (bpy.context.scene,), 'WINDOW', 'POST_PIXEL'
+        draw_handler, (), 'WINDOW', 'POST_PIXEL'
     )
 
 def unregister():
