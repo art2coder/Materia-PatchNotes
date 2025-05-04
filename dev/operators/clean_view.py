@@ -79,7 +79,7 @@ class MODIFIER_PIE_OT_toggle_wire(bpy.types.Operator):
     bl_label = "와이어 보기 전환"
 
     def execute(self, context):
-        space = get_view33d_space(context)
+        space = get_view3d_space(context)
         sid = get_space_id(space)
         state = _viewport_states.setdefault(sid, {})
 
