@@ -10,9 +10,8 @@ COLLECTION_MAP = {
     'LINEART': "LineArt",
 }
 
-ROOT_TYPES = {'MESH', 'CURVE', 'SURFACE', 'FONT', 'EMPTY'}
-
 auto_sort_ignore_list = set()
+
 
 def ensure_collection(name):
     if name not in bpy.data.collections:
@@ -21,23 +20,24 @@ def ensure_collection(name):
         col["auto_sort_generated"] = True
     return bpy.data.collections[name]
 
+
 def move_to_collection(obj, target_coll_name):
     target_coll = ensure_collection(target_coll_name)
     for coll in obj.users_collection:
         coll.objects.unlink(obj)
     target_coll.objects.link(obj)
 
+
 def move_collections_to_ordered_positions():
     scene_col = bpy.context.scene.collection
-    order = ["Cameras", "Lighting", "Images", "LineArt"]
+    order = [COLLECTION_MAP['CAMERA'], COLLECTION_MAP['LIGHT'], COLLECTION_MAP['EMPTY_IMAGE'], COLLECTION_MAP['LINEART']]
     existing = [scene_col.children.get(name) for name in order if scene_col.children.get(name)]
 
     for col in existing:
-        if col and col.name in scene_col.children:
-            scene_col.children.unlink(col)
+        scene_col.children.unlink(col)
     for col in existing:
-        if col:
-            scene_col.children.link(col)
+        scene_col.children.link(col)
+
 
 def remove_empty_collections():
     for coll in list(bpy.data.collections):
@@ -45,13 +45,12 @@ def remove_empty_collections():
             if coll.get("auto_sort_generated") and (coll.users == 0 or not coll.library):
                 bpy.data.collections.remove(coll)
 
+
 def is_lineart_object(obj):
     if blender_version >= (4, 3, 0):
-        # 이름에 'lineart' 또는 '라인아트' 포함 여부만 검사 (대소문자 무시)
         name = obj.name.lower()
         return "lineart" in name or "라인아트" in name
 
-    # 4.2.9 이하: 기존 방식 유지
     if obj.type != 'GPENCIL':
         return False
     name_check = 'lineart' in obj.name.lower().replace(" ", "") or "라인아트" in obj.name
@@ -59,6 +58,7 @@ def is_lineart_object(obj):
         m.type == 'LINEART' for m in obj.data.modifiers
     )
     return name_check or mod_check
+
 
 def is_image_empty(obj):
     if obj.type != 'EMPTY':
@@ -74,17 +74,6 @@ def is_image_empty(obj):
     else:
         return True
 
-def delayed_sort_object(obj_name, delay=0.3):
-    if "lineart" in obj_name.lower() or "라인아트" in obj_name.lower():
-        delay = 0.5
-
-    def _do_sort():
-        obj = bpy.context.scene.objects.get(obj_name)
-        if obj:
-            auto_sort_new_object(obj)
-        return None
-
-    bpy.app.timers.register(functools.partial(_do_sort), first_interval=delay)
 
 def auto_sort_new_object(obj):
     try:
@@ -96,18 +85,17 @@ def auto_sort_new_object(obj):
             move_to_collection(obj, COLLECTION_MAP['EMPTY_IMAGE'])
         elif is_lineart_object(obj):
             move_to_collection(obj, COLLECTION_MAP['LINEART'])
-        elif obj.type in ROOT_TYPES:
-            for coll in obj.users_collection:
-                coll.objects.unlink(obj)
-            bpy.context.scene.collection.objects.link(obj)
+        # 그 외 오브젝트는 무시
     except Exception as e:
         print(f"[Collection Sorter] 정리 중 예외 발생: {e}")
+
 
 def sort_all():
     for obj in bpy.context.scene.objects:
         auto_sort_new_object(obj)
     move_collections_to_ordered_positions()
     remove_empty_collections()
+
 
 def depsgraph_handler(scene):
     global auto_sort_ignore_list
@@ -124,10 +112,9 @@ def depsgraph_handler(scene):
             if obj_name in auto_sort_ignore_list:
                 continue
             obj = bpy.context.scene.objects.get(obj_name)
-            if obj and obj.type in {'CAMERA', 'LIGHT'}:
+            if obj and obj.type in {'CAMERA', 'LIGHT', 'EMPTY', 'GPENCIL'}:
                 auto_sort_new_object(obj)
-            else:
-                delayed_sort_object(obj_name)
+            # 그 외 타입은 무시
             if new_count > 10:
                 percent = int((i + 1) / new_count * 100)
                 print(f"[Collection Sorter] 정리 중... {percent}%")
@@ -136,6 +123,7 @@ def depsgraph_handler(scene):
         depsgraph_handler._last_objs = current_objs
     except Exception as e:
         print(f"[Collection Sorter] 오류 발생: {e}")
+
 
 def toggle_auto_sort(self, context):
     global auto_sort_ignore_list
@@ -148,9 +136,11 @@ def toggle_auto_sort(self, context):
         if depsgraph_handler in bpy.app.handlers.depsgraph_update_post:
             bpy.app.handlers.depsgraph_update_post.remove(depsgraph_handler)
 
+
 def disable_auto_sort_on_file_load(dummy):
     if hasattr(bpy.context.scene, "enable_auto_sort"):
         bpy.context.scene.enable_auto_sort = False
+
 
 class COLLECTION_SORTER_PT_panel(bpy.types.Panel):
     bl_label = "컬렉션 정리 도우미"
@@ -173,7 +163,7 @@ class COLLECTION_SORTER_PT_panel(bpy.types.Panel):
 class COLLECTION_SORTER_OT_sort_all(bpy.types.Operator):
     bl_idname = "collection_sorter.sort_all"
     bl_label = "지금 정리하기"
-    bl_description = "카메라, 라이트, 이미지 등을 컬렉션으로 정리합니다"
+    bl_description = "카메라, 라이트, 이미지, 라인아트만 컬렉션으로 정리합니다"
 
     def execute(self, context):
         sort_all()
@@ -192,7 +182,7 @@ def register():
     bpy.types.Scene.enable_auto_sort = bpy.props.BoolProperty(
         name="자동 정리",
         default=False,
-        description="오브젝트가 생성될 때 자동으로 컬렉션으로 정리됩니다.",
+        description="카메라, 라이트, 이미지, 라인아트 생성 시 자동으로 컬렉션으로 정리합니다.",
         update=toggle_auto_sort,
         options={'SKIP_SAVE'}
     )
