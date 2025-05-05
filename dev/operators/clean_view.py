@@ -75,6 +75,18 @@ def restore_clean_view_settings(space, settings):
         space.shading.color_type = 'MATERIAL'
         space.shading.background_type = 'THEME'
 
+# --- Operators ---
+class MODIFIER_PIE_OT_viewport_render_image(bpy.types.Operator):
+    bl_idname = "modifier_pie.viewport_render_image"
+    bl_label = "뷰포트 렌더"
+    bl_description = "OpenGL 뷰포트를 렌더링하고 렌더 결과 창을 엽니다"
+
+    def execute(self, context):
+        # 현재 3D 뷰 컨텍스트에서 OpenGL 렌더 호출
+        bpy.ops.render.opengl('INVOKE_DEFAULT', view_context=True)
+        return {'FINISHED'}
+        return {'CANCELLED'}
+
 class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_clean_view"
     bl_label = "배경색 전환"
@@ -187,6 +199,7 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
         sid = get_space_id(space)
         state = ensure_viewport_state(sid, space)
 
+        layout.operator("modifier_pie.viewport_render_image", text="뷰포트 렌더", icon="RENDER_RESULT")
         layout.operator("modifier_pie.toggle_clean_view", text="배경색 전환", icon="WORKSPACE", depress=state["use_clean_view"])
 
         row = layout.row(align=True)
@@ -197,6 +210,7 @@ def draw_handler():
     pass
 
 classes = [
+    MODIFIER_PIE_OT_viewport_render_image,
     MODIFIER_PIE_OT_toggle_clean_view,
     MODIFIER_PIE_OT_toggle_wire,
     MODIFIER_PIE_OT_toggle_lineart,
@@ -206,12 +220,10 @@ classes = [
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-
     global _draw_handle
     if _draw_handle:
         bpy.types.SpaceView3D.draw_handler_remove(_draw_handle, 'WINDOW')
     _draw_handle = bpy.types.SpaceView3D.draw_handler_add(draw_handler, (), 'WINDOW', 'POST_PIXEL')
-
     for window in bpy.context.window_manager.windows:
         for area in window.screen.areas:
             if area.type == 'VIEW_3D':
@@ -219,12 +231,12 @@ def register():
                 sid = get_space_id(space)
                 ensure_viewport_state(sid, space)
 
+
 def unregister():
     global _draw_handle
     if _draw_handle:
         bpy.types.SpaceView3D.draw_handler_remove(_draw_handle, 'WINDOW')
         _draw_handle = None
-
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 
