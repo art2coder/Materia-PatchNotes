@@ -188,7 +188,7 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
         return {'FINISHED'}
 
 class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
-    bl_label = "2D 모드"
+    bl_label = "라인 렌더"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Extras"
