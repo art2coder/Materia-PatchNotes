@@ -90,7 +90,7 @@ class MODIFIER_PIE_OT_viewport_render_image(bpy.types.Operator):
 class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_clean_view"
     bl_label = "배경색 전환"
-    bl_description = "배경을 화이트로 전환"
+    bl_description = "배경 색을 흰색으로 바꿉니다"
 
     def execute(self, context):
         space = get_view3d_space(context)
@@ -115,7 +115,7 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
 class MODIFIER_PIE_OT_toggle_wire(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_wire"
     bl_label = "와이어 보기 전환"
-    bl_description = "매쉬를 와이어프레임으로 보기"
+    bl_description = "메시를 선만 보이는 와이어프레임 모드로 전환합니다"
 
     def execute(self, context):
         space = get_view3d_space(context)
