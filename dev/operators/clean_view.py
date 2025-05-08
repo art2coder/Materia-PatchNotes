@@ -90,6 +90,7 @@ class MODIFIER_PIE_OT_viewport_render_image(bpy.types.Operator):
 class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_clean_view"
     bl_label = "배경색 전환"
+    bl_description = "배경을 화이트로 전환"
 
     def execute(self, context):
         space = get_view3d_space(context)
@@ -114,6 +115,7 @@ class MODIFIER_PIE_OT_toggle_clean_view(bpy.types.Operator):
 class MODIFIER_PIE_OT_toggle_wire(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_wire"
     bl_label = "와이어 보기 전환"
+    bl_description = "매쉬를 와이어프레임으로 보기"
 
     def execute(self, context):
         space = get_view3d_space(context)
@@ -134,6 +136,7 @@ class MODIFIER_PIE_OT_toggle_wire(bpy.types.Operator):
 class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_lineart"
     bl_label = "라인아트 전환"
+    bl_description = "'LineArt'라는 이름의 콜렉션을 보이게 하거나 숨깁니다"
 
     def execute(self, context):
         space = get_view3d_space(context)
