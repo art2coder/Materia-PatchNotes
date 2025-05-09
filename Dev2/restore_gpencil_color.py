@@ -1,3 +1,15 @@
+
+bl_info = {
+    "name": "Restore Grease Pencil Color",
+    "author": "EJ",
+    "version": (1, 0),
+    "blender": (4, 2, 0),
+    "location": "View3D > View",
+    "description": "Restore object.color for all Grease Pencil objects",
+    "category": "Object",
+}
+
+
 import bpy
 
 class GPENCIL_OT_restore_object_color(bpy.types.Operator):
@@ -39,3 +51,5 @@ def unregister():
 
 if __name__ == "__main__":
     register()
+
+
