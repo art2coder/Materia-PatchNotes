@@ -1,13 +1,10 @@
 # extras/__init__.py
 
-from . import curve_bevel_popup
-
-submodules = [curve_bevel_popup]
-
 def register():
-    for m in submodules:
-        m.register()
+    from . import curve_bevel
+    curve_bevel.register()
 
 def unregister():
-    for m in reversed(submodules):
-        m.unregister()
+    from . import curve_bevel
+    curve_bevel.unregister()
+
