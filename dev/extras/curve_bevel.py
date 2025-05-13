@@ -53,5 +53,8 @@ def unregister():
     bpy.utils.unregister_class(OBJECT_OT_curve_bevel_popup)
 
 if __name__ == "__main__":
+    try:
+        unregister()
+    except:
+        pass
     register()
-   
