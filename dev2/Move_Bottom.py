@@ -1,6 +1,6 @@
 bl_info = {
     "name": "Move Bottom to Z=0",
-    "blender": (2, 80, 0),
+    "blender": (4, 2, 0),
     "category": "Object",
     "author": "ChatGPT + User",
     "description": "선택한 오브젝트의 바닥면을 Z=0 위치로 이동시킵니다.",
