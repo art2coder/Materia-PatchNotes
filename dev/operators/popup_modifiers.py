@@ -1,6 +1,6 @@
 import bpy
 import math
-from mathutils import Euler
+from mathutils import Euler, Vector
 
 # ─────────────────────────────────────────────
 # 회전 어레이
@@ -332,44 +332,31 @@ class OBJECT_OT_apply_all_common_modifiers(bpy.types.Operator):
             self.report({'INFO'}, "No applicable modifiers found.")
         return {'FINISHED'}
     
-# ─────────────────────────────────────────────    
-# Curve Bevel 
+
+# ─────────────────────────────────────────────
+# Move_Bottom Modifiers
 # ─────────────────────────────────────────────
 
-class OBJECT_OT_curve_bevel_popup(bpy.types.Operator):
-    """Pipe creation tool"""
-    bl_idname = "modifier_pie.curve_bevel_popup"
-    bl_label = "Curve Bevel Settings"
-    bl_options = {'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        selected = context.selected_objects
-        return (
-            context.mode == 'OBJECT' and
-            len(selected) == 1 and
-            selected[0].type == 'CURVE'
-    )
-     
-    def invoke(self, context, event):
-        obj = context.object
-        if not obj or obj.type != 'CURVE':
-            self.report({'WARNING'}, "Selected object is not a Curve.")
-            return {'CANCELLED'}
-        return context.window_manager.invoke_props_dialog(self, width=300)
-
-    def draw(self, context):
-        curve = context.object.data
-        layout = self.layout
-
-        layout.prop(curve, "bevel_depth", text="Bevel Depth")
-        layout.prop(curve, "bevel_resolution", text="Resolution")
-        layout.prop(curve, "use_fill_caps", text="Fill Caps")
-        layout.prop(curve, "bevel_object", text="Bevel Object")
+class OBJECT_OT_move_bottom_to_z0(bpy.types.Operator):
+    bl_idname = "modifier_pi.move_bottom_to_z0"
+    bl_label = "Move Bottom"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        for obj in context.selected_objects:
+            if obj.type != 'MESH':
+                continue
+
+            # 월드 공간에서 바닥면 계산
+            bbox = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+            min_z = min(v.z for v in bbox)
+            delta_z = -min_z
+
+            # 이동 적용
+            obj.location.z += delta_z
+
         return {'FINISHED'}
-    
+
 # ─────────────────────────────────────────────    
 # Subsurf Modifier 
 # ─────────────────────────────────────────────
@@ -482,9 +469,6 @@ classes = (
     OBJECT_OT_add_bevel_popup,
     OBJECT_OT_apply_modifier_bevel,
 
-    # Curve Bevel
-    OBJECT_OT_curve_bevel_popup,
-
     # Subsurf
     OBJECT_OT_add_subsurf_popup,
     OBJECT_OT_apply_modifier_subsurf,
@@ -501,6 +485,8 @@ classes = (
     VIEW3D_OT_toggle_overlay,
 
     OBJECT_OT_rotational_array,
+
+    OBJECT_OT_move_bottom_to_z0,
     
 )        
 
