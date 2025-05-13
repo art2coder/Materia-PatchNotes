@@ -17,7 +17,7 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
         pie.operator("modifier_pie.mirror_live_popup",         text="Mirror",       icon='MOD_MIRROR')
    
         # ↘ Bottom-Right
-        pie.operator("modifier_pie.curve_bevel_popup",         text="Curve Bevel",  icon='CURVE_DATA')
+        pie.operator("modifier_pi.move_bottom_to_z0",         text="Move Bottom",  icon='TRIA_DOWN')
 
         # ← Left
         pie.operator("modifier_pie.rotational_array", text="Rot Array", icon='MOD_ARRAY')
