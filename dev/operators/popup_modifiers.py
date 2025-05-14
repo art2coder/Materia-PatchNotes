@@ -209,58 +209,60 @@ class OBJECT_OT_apply_modifier_bevel(bpy.types.Operator):
 from mathutils import Vector
 
 # ─────────────────────────────────────────────
-# 미러 라이브 미리보기용
+# 미러 
 # ─────────────────────────────────────────────
 
 def update_mirror_modifier(self, context):
-    name = "- Mirror_Origin"
-    empty = bpy.data.objects.get(name)
+    name_base = "- Mirror_Origin"
+    origin = Vector((0.0, 0.0, 0.0))
+    empty = None
+    # 원점에 위치한 동일 이름 엠프티가 없을 때만 새로 생성
+    for obj in bpy.data.objects:
+        if obj.name.startswith(name_base) and (obj.location - origin).length < 1e-4:
+            empty = obj
+            break
     if not empty:
-        empty = bpy.data.objects.new(name, None)
+        empty = bpy.data.objects.new(name_base, None)
         empty.empty_display_type = 'ARROWS'
         empty.empty_display_size = 0.5
-        empty.location = Vector((0.0, 0.0, 0.0))
+        empty.location = origin
         context.collection.objects.link(empty)
 
+    # 선택된 메쉬에 Mirror 모디파이어 미리 적용
     for obj in context.selected_objects:
         if obj.type != 'MESH':
             continue
-        mod = next((m for m in obj.modifiers if m.type == 'MIRROR'), None)
+        mod = obj.modifiers.get("Mirror")
         if not mod:
             mod = obj.modifiers.new(name="Mirror", type='MIRROR')
-        mod.use_axis[0] = self.use_x
-        mod.use_axis[1] = self.use_y
-        mod.use_axis[2] = self.use_z
+        mod.use_axis = (self.use_x, self.use_y, self.use_z)
         mod.mirror_object = empty
 
-    if not getattr(self, "_preview_undopushed", False):
+    # Undo 기록 한 번만
+    if not getattr(self, '_undo_pushed', False):
         bpy.ops.ed.undo_push(message="Mirror Preview")
-        self._preview_undopushed = True
-# ─────────────────────────────────────────────
-# 미러 팝업 오퍼레이터
-# ─────────────────────────────────────────────
+        self._undo_pushed = True
+
+
 class OBJECT_OT_mirror_live_popup(bpy.types.Operator):
     bl_idname = "modifier_pie.mirror_live_popup"
-    bl_label  = "Mirror Live Popup"
-    bl_options= {'UNDO'}
+    bl_label = "Mirror Live Popup"
+    bl_options = {'REGISTER', 'UNDO'}
 
-    use_x: bpy.props.BoolProperty(name="X Axis", default=True,  update=update_mirror_modifier)
+    use_x: bpy.props.BoolProperty(name="X Axis", default=True, update=update_mirror_modifier)
     use_y: bpy.props.BoolProperty(name="Y Axis", default=False, update=update_mirror_modifier)
     use_z: bpy.props.BoolProperty(name="Z Axis", default=False, update=update_mirror_modifier)
 
     @classmethod
     def poll(cls, context):
-        return (
-        context.mode == 'OBJECT' and
-        hasattr(context, "selected_objects") and
-        context.selected_objects and
-        any(o.type == 'MESH' for o in context.selected_objects)
-    )
-    
+        return context.mode == 'OBJECT' and any(o.type == 'MESH' for o in context.selected_objects)
+
     def invoke(self, context, event):
-        if hasattr(self, "_preview_undopushed"):
-            del self._preview_undopushed
+        # 초기화
+        if hasattr(self, '_undo_pushed'):
+            del self._undo_pushed
         update_mirror_modifier(self, context)
+        # 다이얼로그로 표시: OK/Cancel 기본 버튼 포함
         return context.window_manager.invoke_props_dialog(self, width=240)
 
     def draw(self, context):
@@ -271,29 +273,32 @@ class OBJECT_OT_mirror_live_popup(bpy.types.Operator):
         row.prop(self, "use_y", toggle=True)
         row.prop(self, "use_z", toggle=True)
         layout.separator()
+        # Apply 버튼이 실행될 때 모디파이어 확정
         layout.operator("modifier_pie.confirm_mirror_and_apply", text="Apply", icon='CHECKMARK')
 
     def execute(self, context):
-        self.report({'INFO'}, "Mirror preview settings applied.")
+        # 다이얼로그 OK 버튼은 미리보기 그대로 유지
         return {'FINISHED'}
 
 
 class OBJECT_OT_confirm_mirror_and_apply(bpy.types.Operator):
     """Apply Mirror Modifier"""
     bl_idname = "modifier_pie.confirm_mirror_and_apply"
-    bl_label  = "Apply Mirror"
-    bl_options= {'UNDO'}
+    bl_label = "Apply Mirror"
+    bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         for obj in context.selected_objects:
-            if obj.type == 'MESH':
-                for mod in obj.modifiers:
-                    if mod.type == 'MIRROR':
-                        context.view_layer.objects.active = obj
-                        bpy.ops.object.modifier_apply(modifier=mod.name)
-                        break
+            if obj.type != 'MESH':
+                continue
+            for mod in obj.modifiers:
+                if mod.type == 'MIRROR':
+                    context.view_layer.objects.active = obj
+                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                    break
         self.report({'INFO'}, "Mirror modifier applied.")
         return {'FINISHED'}
+
     
 # ─────────────────────────────────────────────
 # Apply All Common Modifiers
