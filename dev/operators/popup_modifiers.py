@@ -206,7 +206,6 @@ class OBJECT_OT_apply_modifier_bevel(bpy.types.Operator):
         bpy.ops.object.modifier_apply(modifier=mod.name)
         return {'FINISHED'}
 
-from mathutils import Vector
 
 # ─────────────────────────────────────────────
 # 미러 
@@ -216,17 +215,23 @@ def update_mirror_modifier(self, context):
     name_base = "- Mirror_Origin"
     origin = Vector((0.0, 0.0, 0.0))
     empty = None
-    # 원점에 위치한 동일 이름 엠프티가 없을 때만 새로 생성
-    for obj in bpy.data.objects:
-        if obj.name.startswith(name_base) and (obj.location - origin).length < 1e-4:
+
+    # 현재 활성 콜렉션 가져오기
+    active_collection = context.collection
+
+    # 콜렉션 내에서 이름이 "- Mirror_Origin"으로 시작하는 엠프티 검색
+    for obj in active_collection.objects:
+        if obj.name.startswith(name_base):
             empty = obj
             break
+
+    # 콜렉션 내에 엠프티가 없으면 원점에 새로 생성
     if not empty:
         empty = bpy.data.objects.new(name_base, None)
         empty.empty_display_type = 'ARROWS'
         empty.empty_display_size = 0.5
         empty.location = origin
-        context.collection.objects.link(empty)
+        active_collection.objects.link(empty)
 
     # 선택된 메쉬에 Mirror 모디파이어 미리 적용
     for obj in context.selected_objects:
@@ -242,6 +247,7 @@ def update_mirror_modifier(self, context):
     if not getattr(self, '_undo_pushed', False):
         bpy.ops.ed.undo_push(message="Mirror Preview")
         self._undo_pushed = True
+
 
 
 class OBJECT_OT_mirror_live_popup(bpy.types.Operator):
