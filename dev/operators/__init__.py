@@ -9,6 +9,7 @@ from .tools_extra import register as register_select, unregister as unregister_s
 from . import auto_sorter
 from . import clean_view
 from . import camera_quick_settings
+from . import lineart_extras
 
 def register():
     register_group()
@@ -20,8 +21,10 @@ def register():
     auto_sorter.register()
     clean_view.register()
     camera_quick_settings.register()
+    lineart_extras.register()
 
 def unregister():
+    lineart_extras.unregister()
     camera_quick_settings.unregister()
     clean_view.unregister()
     auto_sorter.unregister()
