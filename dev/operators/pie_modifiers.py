@@ -11,7 +11,7 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
         pie.operator("modifier_pie.add_bevel_popup",           text="Bevel",        icon='MOD_BEVEL')
 
         # ↑ Top
-        pie.menu("PIE_MT_boolean_submenu", text="Boolean...", icon='MOD_BOOLEAN')
+        pie.operator("modifier_pie.add_boolean_popup", text="Boolean", icon='MOD_BOOLEAN')
   
         # → Right
         pie.operator("modifier_pie.mirror_live_popup",         text="Mirror",       icon='MOD_MIRROR')
@@ -32,22 +32,11 @@ class PIE_MT_modifiers_pie(bpy.types.Menu):
         pie.operator("modifier_pie.add_subsurf_popup",         text="Subsurf",      icon='MOD_SUBSURF')
 
 
-# 🧩 Boolean 서브 파이메뉴
-class PIE_MT_boolean_submenu(bpy.types.Menu):
-    bl_label = "Boolean Submenu"
-    bl_idname = "PIE_MT_boolean_submenu"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.operator("modifier_pie.add_boolean_popup", text="Boolean", icon='MOD_BOOLEAN')
-        layout.operator("modifier_pie.toggle_display_wire", text="Toggle Wire", icon='SHADING_WIRE')
-
 
 
 # 🔧 등록/해제
 classes = (
     PIE_MT_modifiers_pie,
-    PIE_MT_boolean_submenu,
 )
 
 
