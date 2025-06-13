@@ -110,6 +110,7 @@ class OBJECT_OT_add_boolean_popup(bpy.types.Operator):
     bl_options = {'UNDO'}
 
     mod = None
+    target_object = None
     
     @classmethod
     def poll(cls, context):
@@ -131,15 +132,62 @@ class OBJECT_OT_add_boolean_popup(bpy.types.Operator):
         layout = self.layout
         layout.prop(self.mod, "operation", expand=True)
         layout.prop(self.mod, "operand_type")
+        
         if self.mod.operand_type == 'OBJECT':
             layout.prop(self.mod, "object", text="Target Object")
+            # 타겟 오브젝트가 변경되었는지 확인하고 와이어프레임 설정 버튼 추가
+            if self.mod.object and self.mod.object != context.active_object:
+                if self.target_object != self.mod.object:
+                    self.target_object = self.mod.object
+                layout.operator("modifier_pie.set_wireframe", text="Set Wireframe", icon='SHADING_WIRE')
         elif self.mod.operand_type == 'COLLECTION':
             layout.prop(self.mod, "collection", text="Target Collection")
+            if self.mod.collection:
+                layout.operator("modifier_pie.set_wireframe_collection", text="Set Collection Wireframe", icon='SHADING_WIRE')
+        
         layout.separator()
         layout.operator("modifier_pie.apply_modifier_boolean", text="Apply", icon='CHECKMARK')
+        layout.operator("modifier_pie.reset_wireframe", text="Reset Display", icon='RESTRICT_VIEW_OFF')
 
     def execute(self, context):
         return {'FINISHED'}
+
+class OBJECT_OT_set_wireframe(bpy.types.Operator):
+    bl_idname = "modifier_pie.set_wireframe"
+    bl_label = "Set Target Wireframe"
+
+    def execute(self, context):
+        mod = next((m for m in context.object.modifiers if m.type == 'BOOLEAN'), None)
+        if mod and mod.object:
+            self.set_wireframe_display(mod.object, True)
+        return {'FINISHED'}
+    
+    def set_wireframe_display(self, obj, wireframe=True):
+        """오브젝트의 디스플레이 타입을 와이어프레임으로 설정"""
+        if wireframe:
+            # 안전한 방법으로 커스텀 프로퍼티 확인 및 설정
+            if obj.get('original_display_type') is None:
+                obj['original_display_type'] = obj.display_type
+            obj.display_type = 'WIRE'
+
+class OBJECT_OT_set_wireframe_collection(bpy.types.Operator):
+    bl_idname = "modifier_pie.set_wireframe_collection"
+    bl_label = "Set Collection Wireframe"
+
+    def execute(self, context):
+        mod = next((m for m in context.object.modifiers if m.type == 'BOOLEAN'), None)
+        if mod and mod.collection:
+            for obj in mod.collection.objects:
+                if obj.type == 'MESH' and obj != context.active_object:
+                    self.set_wireframe_display(obj, True)
+        return {'FINISHED'}
+    
+    def set_wireframe_display(self, obj, wireframe=True):
+        """오브젝트의 디스플레이 타입을 와이어프레임으로 설정"""
+        if wireframe:
+            if obj.get('original_display_type') is None:
+                obj['original_display_type'] = obj.display_type
+            obj.display_type = 'WIRE'
 
 class OBJECT_OT_apply_modifier_boolean(bpy.types.Operator):
     bl_idname = "modifier_pie.apply_modifier_boolean"
@@ -150,8 +198,53 @@ class OBJECT_OT_apply_modifier_boolean(bpy.types.Operator):
         if not mod:
             self.report({'WARNING'}, "No Boolean modifier found.")
             return {'CANCELLED'}
+        
+        # 모디파이어 적용 전에 타겟 오브젝트의 디스플레이 복원
+        if mod.operand_type == 'OBJECT' and mod.object:
+            self.reset_display(mod.object)
+        elif mod.operand_type == 'COLLECTION' and mod.collection:
+            for obj in mod.collection.objects:
+                if obj.type == 'MESH':
+                    self.reset_display(obj)
+        
         bpy.ops.object.modifier_apply(modifier=mod.name)
         return {'FINISHED'}
+    
+    def reset_display(self, obj):
+        """오브젝트의 디스플레이를 원래대로 복원"""
+        original_type = obj.get('original_display_type')
+        if original_type is not None:
+            obj.display_type = original_type
+            del obj['original_display_type']
+        else:
+            obj.display_type = 'TEXTURED'
+
+class OBJECT_OT_reset_wireframe(bpy.types.Operator):
+    bl_idname = "modifier_pie.reset_wireframe"
+    bl_label = "Reset Wireframe Display"
+
+    def execute(self, context):
+        mod = next((m for m in context.object.modifiers if m.type == 'BOOLEAN'), None)
+        if not mod:
+            return {'CANCELLED'}
+        
+        if mod.operand_type == 'OBJECT' and mod.object:
+            self.reset_display(mod.object)
+        elif mod.operand_type == 'COLLECTION' and mod.collection:
+            for obj in mod.collection.objects:
+                if obj.type == 'MESH':
+                    self.reset_display(obj)
+        
+        return {'FINISHED'}
+    
+    def reset_display(self, obj):
+        """오브젝트의 디스플레이를 원래대로 복원"""
+        original_type = obj.get('original_display_type')
+        if original_type is not None:
+            obj.display_type = original_type
+            del obj['original_display_type']
+        else:
+            obj.display_type = 'TEXTURED'
 
 # ─────────────────────────────────────────────
 #  Bevel Modifier
@@ -215,23 +308,17 @@ def update_mirror_modifier(self, context):
     name_base = "- Mirror_Origin"
     origin = Vector((0.0, 0.0, 0.0))
     empty = None
-
-    # 현재 활성 콜렉션 가져오기
-    active_collection = context.collection
-
-    # 콜렉션 내에서 이름이 "- Mirror_Origin"으로 시작하는 엠프티 검색
-    for obj in active_collection.objects:
-        if obj.name.startswith(name_base):
+    # 원점에 위치한 동일 이름 엠프티가 없을 때만 새로 생성
+    for obj in bpy.data.objects:
+        if obj.name.startswith(name_base) and (obj.location - origin).length < 1e-4:
             empty = obj
             break
-
-    # 콜렉션 내에 엠프티가 없으면 원점에 새로 생성
     if not empty:
         empty = bpy.data.objects.new(name_base, None)
         empty.empty_display_type = 'ARROWS'
         empty.empty_display_size = 0.5
         empty.location = origin
-        active_collection.objects.link(empty)
+        context.collection.objects.link(empty)
 
     # 선택된 메쉬에 Mirror 모디파이어 미리 적용
     for obj in context.selected_objects:
@@ -247,7 +334,6 @@ def update_mirror_modifier(self, context):
     if not getattr(self, '_undo_pushed', False):
         bpy.ops.ed.undo_push(message="Mirror Preview")
         self._undo_pushed = True
-
 
 
 class OBJECT_OT_mirror_live_popup(bpy.types.Operator):
@@ -285,7 +371,6 @@ class OBJECT_OT_mirror_live_popup(bpy.types.Operator):
     def execute(self, context):
         # 다이얼로그 OK 버튼은 미리보기 그대로 유지
         return {'FINISHED'}
-
 
 class OBJECT_OT_confirm_mirror_and_apply(bpy.types.Operator):
     """Apply Mirror Modifier"""
@@ -409,7 +494,6 @@ class OBJECT_OT_add_subsurf_popup(bpy.types.Operator):
     def execute(self, context):
         return {'FINISHED'}
 
-
 class OBJECT_OT_apply_modifier_subsurf(bpy.types.Operator):
     bl_idname = "modifier_pie.apply_modifier_subsurf"
     bl_label = "Apply Subsurf Modifier"
@@ -474,7 +558,10 @@ classes = (
      
      # Boolean
     OBJECT_OT_add_boolean_popup,
+    OBJECT_OT_set_wireframe,
+    OBJECT_OT_set_wireframe_collection,
     OBJECT_OT_apply_modifier_boolean,
+    OBJECT_OT_reset_wireframe,
 
     # Bevel
     OBJECT_OT_add_bevel_popup,
