@@ -2,14 +2,14 @@ import bpy
 from mathutils import Vector
 
 # ─────────────────────────────────────────────
-# 1) 그루핑 오퍼레이터
+# 1) 그루핑 오퍼레이터 (수정됨)
 # ─────────────────────────────────────────────
 
 class OBJECT_OT_group_by_empty(bpy.types.Operator):
-    """Create an Empty at median pivot and parent selected objects (one‐step undo)"""
+    """Apply All Transform (skip if multi-user), set origins to geometry center, create Empty 5m above center, and parent"""
     bl_idname = "object.group_by_empty"
     bl_label = "Group by Empty"
-    bl_options = {'REGISTER', 'UNDO'}  # UNDO 옵션으로 전체를 한 스텝에 묶기
+    bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
@@ -21,16 +21,52 @@ class OBJECT_OT_group_by_empty(bpy.types.Operator):
             self.report({'WARNING'}, "No objects to group")
             return {'CANCELLED'}
 
-        # 1) 센터 계산
-        center = sum((o.matrix_world.translation for o in sel), Vector()) / len(sel)
+        # 1) Multi-User Mesh 확인
+        has_multi_user = any(obj.data.users > 1 for obj in sel if hasattr(obj, 'data') and obj.data)
+        
+        # 2) Multi-User가 없는 경우에만 All Transform 적용
+        if not has_multi_user:
+            for obj in sel:
+                obj.select_set(True)
+            context.view_layer.objects.active = sel[0]
+            
+            # All Transform 적용 (Location, Rotation, Scale)
+            bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+            self.report({'INFO'}, "Applied All Transform to selected objects")
+        else:
+            self.report({'INFO'}, "Skipped All Transform due to Multi-User Mesh detected")
 
-        # 2) Empty 생성 (내장 오퍼레이터 사용)
+        # 3) 무게중심 계산 (X, Y축 중심)
+        center = sum((o.matrix_world.translation for o in sel), Vector()) / len(sel)
+        
+        # 4) 각 오브젝트의 바운딩 박스 최상단 Z값 찾기
+        max_z = max(max(o.matrix_world @ Vector(corner) for corner in o.bound_box)[2] for o in sel)
+        
+        # 5) Empty 위치: 무게중심 X,Y + 최상단 Z + 5미터
+        empty_location = Vector((center.x, center.y, max_z + 5.0))
+        
+        # 디버그 정보 출력
+        print(f"Objects center (X,Y): {center.x:.2f}, {center.y:.2f}")
+        print(f"Max Z: {max_z:.2f}")
+        print(f"Empty location: {empty_location}")
+
+        # 6) 각 오브젝트의 오리진을 각각의 지오메트리 중앙으로 설정
+        for obj in sel:
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            # 다른 오브젝트들은 선택 해제
+            for other_obj in sel:
+                if other_obj != obj:
+                    other_obj.select_set(False)
+            # 현재 오브젝트의 오리진을 지오메트리 중앙으로 설정
+            bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+
+        # 7) Empty 생성
         bpy.ops.object.select_all(action='DESELECT')
-        # 빈이 생성될 레이어와 컨텍스트가 VIEW_3D 인지 확인 필요
-        bpy.ops.object.empty_add(type='PLAIN_AXES', location=center)
+        bpy.ops.object.empty_add(type='PLAIN_AXES', location=empty_location)
         empty = context.active_object
         
-        # 3)자동 이름 지정: "Group", "Group_001", ...
+        # 8) 자동 이름 지정: "Group", "Group_001", ...
         base_name = "- Group"
         name = base_name
         i = 1
@@ -39,20 +75,20 @@ class OBJECT_OT_group_by_empty(bpy.types.Operator):
             i += 1
         empty.name = name
 
-        # 4) 선택한 객체들 재선택 후 페런트
+        # 9) 선택한 객체들 재선택 후 페런트
         for o in sel:
             o.select_set(True)
         context.view_layer.objects.active = empty
         bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
 
-        # 5) 결과 리포트
-        self.report({'INFO'}, f"Grouped {len(sel)} objects into '{empty.name}'")
+        # 10) 결과 리포트
+        transform_status = "with transforms applied" if not has_multi_user else "without transforms (Multi-User detected)"
+        self.report({'INFO'}, f"Grouped {len(sel)} objects into '{empty.name}' at center location {transform_status}")
         return {'FINISHED'}
 
 
-
 # ─────────────────────────────────────────────
-# 2) 언그루핑 오퍼레이터
+# 2) 언그루핑 오퍼레이터 (기존과 동일)
 # ─────────────────────────────────────────────
 
 class OBJECT_OT_ungroup_empty(bpy.types.Operator):
@@ -100,7 +136,6 @@ class OBJECT_OT_ungroup_empty(bpy.types.Operator):
         return {'FINISHED'}
 
 
-
 # ▶ 클래스 리스트로 통합
 classes = (
     OBJECT_OT_group_by_empty,
@@ -110,6 +145,7 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+
 
 def unregister():
     for cls in reversed(classes):
