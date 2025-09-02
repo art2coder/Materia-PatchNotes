@@ -8,7 +8,6 @@ jobs:
   update-version:
     runs-on: ubuntu-latest
     permissions:
-      # git-auto-commit-action이 커밋/푸시를 할 수 있도록 권한을 부여합니다.
       contents: write
     steps:
       - name: Checkout code
