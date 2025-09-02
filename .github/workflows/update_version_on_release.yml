@@ -1,8 +1,5 @@
-# .github/workflows/update_version_on_release.yml
-
 name: Update Version TXT on Release
 
-# 'release' 이벤트가 'created'(생성)되었을 때 이 워크플로우를 실행
 on:
   release:
     types: [created]
@@ -10,18 +7,17 @@ on:
 jobs:
   update-version:
     runs-on: ubuntu-latest
+    permissions:
+      # git-auto-commit-action이 커밋/푸시를 할 수 있도록 권한을 부여합니다.
+      contents: write
     steps:
-      # 1. 저장소의 코드를 체크아웃(다운로드)
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. 릴리즈 태그 이름으로 version.txt 파일 내용 덮어쓰기
       - name: Update version.txt
         run: |
-          # 릴리즈 태그(예: v1.2.1)에서 앞의 'v'를 제거하고 version.txt에 쓴다
           echo "${{ github.event.release.tag_name }}" | sed 's/^v//' > version.txt
 
-      # 3. 변경된 version.txt 파일을 자동으로 커밋하고 푸시
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
