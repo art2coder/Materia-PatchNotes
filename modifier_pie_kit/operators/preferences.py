@@ -1,8 +1,116 @@
-# 파일 이름: preferences.py
-
 import bpy
 from bpy.props import StringProperty, BoolProperty, FloatProperty, IntProperty, EnumProperty
 from bpy.types import AddonPreferences, Operator
+import urllib.request
+import zipfile
+import os
+import shutil
+import threading
+import sys
+
+# --- 업데이터: 깃허브 정보 ---
+# 사용자님의 깃허브 정보로 설정되어 있습니다.
+GITHUB_USER = "art2coder"
+GITHUB_REPO = "modifier_pie_kit"
+
+
+# --- 업데이터: 확인 및 설치 로직 ---
+def get_addon_version(addon_name):
+    """ 현재 설치된 애드온의 버전을 더 안정적인 방법으로 가져옵니다. """
+    # 애드온이 블렌더에 로드되어 있는지 확인
+    if addon_name not in sys.modules:
+        return (0, 0, 0)
+
+    # 로드된 모듈에서 직접 bl_info를 가져옴
+    module = sys.modules[addon_name]
+    return getattr(module, "bl_info", {}).get("version", (0, 0, 0))
+
+def compare_versions(v1, v2):
+    return v1 > v2
+
+def fetch_latest_version_info():
+    url = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/main/version.txt"
+    try:
+        with urllib.request.urlopen(url, timeout=5) as response:
+            latest_version_str = response.read().decode('utf-8').strip()
+            latest_version = tuple(map(int, latest_version_str.split('.')))
+            return latest_version
+    except Exception as e:
+        print(f"Error checking for update: {e}")
+        return None
+
+def get_download_url(version_str):
+    file_name = f"{GITHUB_REPO}_v{version_str}.zip"
+    return f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/latest/download/{file_name}"
+
+class UpdaterProperties(bpy.types.PropertyGroup):
+    update_available: BoolProperty(default=False)
+    latest_version: StringProperty(default="")
+
+class MODIFIERPIEKIT_OT_check_for_updates(Operator):
+    bl_idname = "modifierpiekit.check_for_updates"
+    bl_label = "Check for Updates"
+
+    def execute(self, context):
+        updater_props = context.scene.modifier_pie_kit_updater
+        latest_version = fetch_latest_version_info()
+        
+        if latest_version:
+            current_version = get_addon_version(GITHUB_REPO)
+            if compare_versions(latest_version, current_version):
+                updater_props.update_available = True
+                updater_props.latest_version = ".".join(map(str, latest_version))
+                self.report({'INFO'}, f"New version available: {updater_props.latest_version}")
+            else:
+                updater_props.update_available = False
+                self.report({'INFO'}, "You have the latest version.")
+        else:
+            self.report({'ERROR'}, "Could not check for updates. Check internet connection.")
+        return {'FINISHED'}
+
+class MODIFIERPIEKIT_OT_install_update(Operator):
+    bl_idname = "modifierpiekit.install_update"
+    bl_label = "Install Update"
+
+    def install_thread_task(self, context):
+        try:
+            updater_props = context.scene.modifier_pie_kit_updater
+            latest_version_str = updater_props.latest_version
+            download_url = get_download_url(latest_version_str)
+            
+            addons_path = bpy.utils.script_path_user() + "/addons/"
+            zip_file_name = f"{GITHUB_REPO}_v{latest_version_str}.zip"
+            zip_path = os.path.join(addons_path, zip_file_name)
+
+            urllib.request.urlretrieve(download_url, zip_path)
+
+            addon_path = os.path.join(addons_path, GITHUB_REPO)
+            if os.path.exists(addon_path):
+                shutil.rmtree(addon_path)
+
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(addons_path)
+            
+            os.remove(zip_path)
+
+            def draw_popup(self, context):
+                self.layout.label(text="Update successful! Please restart Blender to apply changes.")
+            
+            bpy.context.window_manager.popup_menu(draw_popup, title="Update Complete", icon='INFO')
+            updater_props.update_available = False
+
+        except Exception as e:
+            print(f"Update failed: {e}")
+            def draw_popup(self, context):
+                self.layout.label(text=f"Update failed. See console for details.")
+            bpy.context.window_manager.popup_menu(draw_popup, title="Update Error", icon='ERROR')
+
+    def execute(self, context):
+        self.report({'INFO'}, "Update started... Blender may freeze. See console for progress.")
+        install_thread = threading.Thread(target=self.install_thread_task, args=(context,))
+        install_thread.start()
+        return {'FINISHED'}
+
 
 # --- 콜백 함수 (기능 로직) ---
 def update_outliner_focus_handler(self, context):
@@ -135,6 +243,7 @@ class ModifierPiePreferences(AddonPreferences):
     ui_display_expanded: BoolProperty(name="파이 메뉴", default=True)
     ui_camera_expanded: BoolProperty(name="카메라 해상도", default=True)
     ui_outliner_expanded: BoolProperty(name="아웃라이너", default=True)
+    ui_updater_expanded: BoolProperty(name="업데이트", default=True)
 
     # --- UI를 그리는 메인 함수 ---
     def draw(self, context):
@@ -214,6 +323,27 @@ class ModifierPiePreferences(AddonPreferences):
             row = center_col.row(align=True); split = row.split(factor=0.5); split.label(text=""); split.prop(self, "use_collection_sorting")
             row = center_col.row(align=True); split = row.split(factor=0.5); split.label(text=""); split.prop(self, "use_outliner_auto_focus")
 
+        center_col.separator(factor=3)
+
+
+        # --- 5. 업데이트 패널 ---
+        row = center_col.row(align=True)
+        icon = 'TRIA_DOWN' if self.ui_updater_expanded else 'TRIA_RIGHT'
+        row.prop(self, "ui_updater_expanded", text="", icon=icon, emboss=False)
+        row.label(text="업데이트")
+
+        if self.ui_updater_expanded:
+            updater_props = context.scene.modifier_pie_kit_updater
+            col = center_col.column(align=True)
+            
+            col.operator("modifierpiekit.check_for_updates", icon='URL')
+            
+            if updater_props.update_available:
+                update_box = col.box()
+                row = update_box.row()
+                row.label(text=f"새 버전이 있습니다: {updater_props.latest_version}", icon='INFO')
+                row.operator("modifierpiekit.install_update", text="지금 설치", icon='DOWNLOAD_CLOUD')    
+
 # --- 키맵 등록/해제 로직 ---
 addon_keymaps = []
 def update_keymaps():
@@ -266,11 +396,21 @@ def unregister_keymaps():
     addon_keymaps.clear()
 
 # --- 모듈 등록/해제 ---
-classes = (WM_OT_capture_key, ModifierPiePreferences)
+classes = (
+    WM_OT_capture_key, 
+    ModifierPiePreferences,
+    UpdaterProperties,
+    MODIFIERPIEKIT_OT_check_for_updates,
+    MODIFIERPIEKIT_OT_install_update
+)
 def register():
-    for cls in classes: bpy.utils.register_class(cls)
+    for cls in classes: 
+        bpy.utils.register_class(cls)
+    bpy.types.Scene.modifier_pie_kit_updater = bpy.props.PointerProperty(type=UpdaterProperties)
     bpy.app.timers.register(lambda: update_keymaps() or None, first_interval=0.1)
 
 def unregister():
     unregister_keymaps()
-    for cls in reversed(classes): bpy.utils.unregister_class(cls)
+    for cls in reversed(classes): 
+        bpy.utils.unregister_class(cls)
+    del bpy.types.Scene.modifier_pie_kit_updater
