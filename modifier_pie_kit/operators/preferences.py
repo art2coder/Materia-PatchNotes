@@ -280,7 +280,7 @@ class ModifierPiePreferences(AddonPreferences):
             row = col.row(align=True); split = row.split(factor=0.5); split.alignment = 'RIGHT'; split.label(text="그룹 해제"); op = split.operator("wm.capture_key", text=get_key_text(self, "ungrouping")); op.key_type = "ungrouping"
             row = col.row(align=True); split = row.split(factor=0.5); split.alignment = 'RIGHT'; split.label(text="파이 메뉴"); op = split.operator("wm.capture_key", text=get_key_text(self, "pie_menu")); op.key_type = "pie_menu"
             row = col.row(align=True); split = row.split(factor=0.5); split.alignment = 'RIGHT'; split.label(text="스마트 셀렉트"); op = split.operator("wm.capture_key", text=get_key_text(self, "smart_select")); op.key_type = "smart_select"
-            row = center_col.row(align=True); split = row.split(factor=0.5); split.label(text=""); split.prop(self, "override_default")
+            #row = center_col.row(align=True); split = row.split(factor=0.5); split.label(text=""); split.prop(self, "override_default")
 
         center_col.separator(factor=3)
 
@@ -342,7 +342,7 @@ class ModifierPiePreferences(AddonPreferences):
                 update_box = col.box()
                 row = update_box.row()
                 row.label(text=f"새 버전이 있습니다: {updater_props.latest_version}", icon='INFO')
-                row.operator("modifierpiekit.install_update", text="지금 설치", icon='DOWNLOAD_CLOUD')    
+                row.operator("modifierpiekit.install_update", text="지금 설치", icon='URL')    
 
 # --- 키맵 등록/해제 로직 ---
 addon_keymaps = []

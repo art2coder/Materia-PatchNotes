@@ -1,14 +1,16 @@
 import bpy
 
+
 bl_info = {
     "name": "Modifier Pie Kit",
     "author": "EJ",
-    "version": (1, 4, 0),
+    "version": (1, 3, 8),
     "blender": (4, 2, 0),
     "location": "View3D > Object > Modifier Pie Kit",
     "description": "Simple Workflow Pie Menu Toolkit",
     "category": "Object",
 }
+ADDON_NAME = __package__ 
 
 
 from . import ui
@@ -19,8 +21,10 @@ def register():
     register_ops()
     ui.register()
     
+    
 
 def unregister():
+
     
     ui.unregister()
     unregister_ops()
