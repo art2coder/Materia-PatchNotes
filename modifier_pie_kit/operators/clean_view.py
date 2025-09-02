@@ -1,7 +1,6 @@
 import bpy
 
 _viewport_states = {}
-
 _draw_handle = None
 
 # --- 유틸리티 함수 ---
@@ -42,17 +41,6 @@ def update_clean_bg(self, context):
                 space.shading.background_type = 'VIEWPORT'
                 space.shading.background_color = context.scene.clean_view_bg_color
 
-# Scene에 배경색 프로퍼티 추가
-bpy.types.Scene.clean_view_bg_color = bpy.props.FloatVectorProperty(
-    name="배경색",
-    subtype='COLOR',
-    size=3,
-    default=(1.0, 1.0, 1.0),
-    min=0.0,
-    max=1.0,
-    update=update_clean_bg
-)
-
 # --- Operators ---
 
 class MODIFIER_PIE_OT_viewport_render_image(bpy.types.Operator):
@@ -61,16 +49,49 @@ class MODIFIER_PIE_OT_viewport_render_image(bpy.types.Operator):
     bl_description = "뷰포트를 렌더링하고 렌더 결과 창을 엽니다"
 
     def execute(self, context):
+        # 클린 렌더 옵션이 체크되어 있지 않으면 바로 렌더링
+        if not context.scene.clean_render_hide_overlays:
+            try:
+                bpy.ops.render.opengl('INVOKE_DEFAULT', view_context=True)
+                return {'FINISHED'}
+            except Exception as e:
+                self.report({'ERROR'}, f"렌더링 실패: {str(e)}")
+                return {'CANCELLED'}
+        
+        # 클린 렌더 모드: 오버레이 임시 비활성화
+        space = get_view3d_space(context)
+        if not space:
+            self.report({'WARNING'}, "3D 뷰포트를 찾을 수 없습니다.")
+            return {'CANCELLED'}
+        
+        # 현재 오버레이 상태 저장
+        original_overlay_state = space.overlay.show_overlays
+        
         try:
+            # 오버레이 끄기
+            space.overlay.show_overlays = False
+            
+            # 화면 업데이트 강제 실행
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+            
+            # 렌더링 실행
             bpy.ops.render.opengl('INVOKE_DEFAULT', view_context=True)
-            return {'FINISHED'}
+            
         except Exception as e:
             self.report({'ERROR'}, f"렌더링 실패: {str(e)}")
             return {'CANCELLED'}
-
-# =================================================================
-# ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 새로운 기능 추가 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-# =================================================================
+        
+        finally:
+            # 오버레이 상태 복원 (defer 방식으로 안전하게)
+            def restore_overlay():
+                if space:
+                    space.overlay.show_overlays = original_overlay_state
+                return None
+            
+            # 다음 프레임에서 복원 실행
+            bpy.app.timers.register(restore_overlay, first_interval=0.1)
+        
+        return {'FINISHED'}
 
 class MODIFIER_PIE_OT_reset_bg_to_theme(bpy.types.Operator):
     """뷰포트 배경을 기본 테마색으로 되돌립니다"""
@@ -86,10 +107,6 @@ class MODIFIER_PIE_OT_reset_bg_to_theme(bpy.types.Operator):
         self.report({'WARNING'}, "3D 뷰포트를 찾을 수 없습니다.")
         return {'CANCELLED'}
 
-# =================================================================
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ 새로운 기능 추가 ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-# =================================================================
-
 class MODIFIER_PIE_OT_toggle_wire(bpy.types.Operator):
     bl_idname = "modifier_pie.toggle_wire"
     bl_label = "와이어 보기 전환"
@@ -99,16 +116,19 @@ class MODIFIER_PIE_OT_toggle_wire(bpy.types.Operator):
         space = get_view3d_space(context)
         if not space:
             return {'CANCELLED'}
+
         sid = get_space_id(space)
         state = ensure_viewport_state(sid)
         state["show_cleanview_wire_toggle"] = not state.get("show_cleanview_wire_toggle", False)
         state["show_cleanview_lineart_toggle"] = False
+
         if state["show_cleanview_wire_toggle"]:
             space.shading.type = 'WIREFRAME'
             if hasattr(space.shading, 'show_xray'):
                 space.shading.show_xray = False
         else:
             space.shading.type = 'SOLID'
+
         return {'FINISHED'}
 
 class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
@@ -120,10 +140,12 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
         space = get_view3d_space(context)
         if not space:
             return {'CANCELLED'}
+
         sid = get_space_id(space)
         state = ensure_viewport_state(sid)
         state["show_cleanview_lineart_toggle"] = not state.get("show_cleanview_lineart_toggle", False)
         state["show_cleanview_wire_toggle"] = False
+
         col = bpy.data.collections.get("LineArt")
         if col:
             def toggle_collection_in_all_layers():
@@ -137,12 +159,14 @@ class MODIFIER_PIE_OT_toggle_lineart(bpy.types.Operator):
                                 return True
                         return False
                     recursive(layer.layer_collection)
+
             toggle_collection_in_all_layers()
 
         is_lineart_visible = state["show_cleanview_lineart_toggle"]
         space.show_object_viewport_mesh = not is_lineart_visible
         space.shading.type = 'SOLID'
 
+        # 라인아트 관련 추가 설정들...
         for obj in context.scene.objects:
             if obj.type == 'GPENCIL' and "LineArt" in obj.name:
                 if bpy.app.version >= (4, 4, 0):
@@ -181,6 +205,7 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
         space = get_view3d_space(context)
         if not space:
             layout.label(text="3D 뷰포트가 필요합니다")
@@ -191,17 +216,9 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
 
         layout.operator("modifier_pie.viewport_render_image", text="뷰포트 렌더", icon="RENDER_RESULT")
 
-        # =================================================================
-        # ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 수정된 부분 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-        # =================================================================
         row = layout.row(align=True)
-        # "배경색" 버튼 추가 (클릭 시 테마색으로 변경)
-        row.operator(MODIFIER_PIE_OT_reset_bg_to_theme.bl_idname, text="배경색")
-        # 라벨 없는 색상 선택기 추가
+        row.operator(MODIFIER_PIE_OT_reset_bg_to_theme.bl_idname, text="테마색")
         row.prop(context.scene, "clean_view_bg_color", text="")
-        # =================================================================
-        # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ 수정된 부분 ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-        # =================================================================
 
         row2 = layout.row(align=True)
         row2.operator("modifier_pie.toggle_wire", text="와이어", icon="SHADING_WIRE", depress=state["show_cleanview_wire_toggle"])
@@ -209,27 +226,42 @@ class MODIFIER_PIE_PT_clean_view_panel(bpy.types.Panel):
 
         layout.separator()
 
-        layout.prop(context.scene.render, "film_transparent", text="배경 투명화")
+        # 투명 렌더와 클린 렌더 체크박스를 같은 행에 배치
+        row3 = layout.row(align=True)
+        row3.prop(context.scene.render, "film_transparent", text="배경 투명화")
+        row3.prop(context.scene, "clean_render_hide_overlays", text="클린 렌더")
 
 def draw_handler():
     pass
 
-# =================================================================
-# ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼ 수정된 부분 ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-# =================================================================
 classes = [
     MODIFIER_PIE_OT_viewport_render_image,
-    MODIFIER_PIE_OT_reset_bg_to_theme, # 새로 추가한 클래스 등록
+    MODIFIER_PIE_OT_reset_bg_to_theme,
     MODIFIER_PIE_OT_toggle_wire,
     MODIFIER_PIE_OT_toggle_lineart,
     MODIFIER_PIE_PT_clean_view_panel,
 ]
-# =================================================================
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ 수정된 부분 ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-# =================================================================
-
 
 def register():
+    # Scene에 프로퍼티 추가
+    bpy.types.Scene.clean_view_bg_color = bpy.props.FloatVectorProperty(
+        name="배경색", 
+        subtype='COLOR', 
+        size=3, 
+        default=(1.0, 1.0, 1.0),
+        min=0.0, 
+        max=1.0, 
+        update=update_clean_bg
+    )
+    
+    # 클린 렌더 프로퍼티 추가
+    bpy.types.Scene.clean_render_hide_overlays = bpy.props.BoolProperty(
+        name="렌더 시 오버레이 숨김",
+        description="뷰포트 렌더 시에만 일시적으로 오버레이를 끕니다",
+        default=False
+    )
+    
+    # 클래스 등록
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -244,23 +276,21 @@ def register():
         bpy.types.SpaceView3D.draw_handler_remove(_draw_handle, 'WINDOW')
     _draw_handle = bpy.types.SpaceView3D.draw_handler_add(draw_handler, (), 'WINDOW', 'POST_PIXEL')
 
-    try:
-        for window in bpy.context.window_manager.windows:
-            for area in window.screen.areas:
-                if area.type == 'VIEW_3D':
-                    space = area.spaces.active
-                    sid = get_space_id(space)
-                    ensure_viewport_state(sid, space)
-    except:
-        pass
-
 def unregister():
     global _draw_handle
     if _draw_handle:
         bpy.types.SpaceView3D.draw_handler_remove(_draw_handle, 'WINDOW')
-    _draw_handle = None
+        _draw_handle = None
+
+    # 클래스 해제
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
+    
+    # Scene에 추가했던 프로퍼티를 깨끗하게 제거
+    if hasattr(bpy.types.Scene, "clean_render_hide_overlays"):
+        del bpy.types.Scene.clean_render_hide_overlays
+    if hasattr(bpy.types.Scene, "clean_view_bg_color"):
+        del bpy.types.Scene.clean_view_bg_color
 
 if __name__ == "__main__":
     register()

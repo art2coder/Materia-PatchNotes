@@ -1,5 +1,8 @@
 import bpy
 import os
+import bpy.utils.previews
+
+custom_icons = None
 
 class INTERNAL_OT_create_image_plane(bpy.types.Operator):
     """
@@ -55,11 +58,35 @@ class PIE_MT_pivot_pie(bpy.types.Menu):
         grid_left = pie.grid_flow(row_major=True, columns=3, even_columns=True, even_rows=True, align=True)
         grid_left.scale_x = icon_scale
         grid_left.scale_y = icon_scale
-        grid_left.operator("modifier_pie.origin_to_geometry", text="Geometry" if show_text else "", icon='OBJECT_ORIGIN')
+
+        if custom_icons and "object_origin_icon" in custom_icons:
+            
+            grid_left.operator("modifier_pie.origin_to_geometry", text="Geometry" if show_text else "", 
+                               icon_value=custom_icons["object_origin_icon"].icon_id)
+        else:
+            grid_left.operator("modifier_pie.origin_to_geometry", text="Geometry" if show_text else "", icon='OBJECT_ORIGIN')
+
+
         grid_left.operator("object.origin_to_bottom", text="Bottom" if show_text else "", icon='AXIS_TOP')
-        grid_left.operator("modifier_pie.origin_to_cursor", text="3D Cursor" if show_text else "", icon='PIVOT_CURSOR')
+
+   
+        if custom_icons and "pivot_cursor_icon" in custom_icons:
+            
+            grid_left.operator("modifier_pie.origin_to_cursor", text="3D Cursor" if show_text else "", 
+                               icon_value=custom_icons["pivot_cursor_icon"].icon_id)
+        else:
+            grid_left.operator("modifier_pie.origin_to_cursor", text="3D Cursor" if show_text else "", icon='PIVOT_CURSOR')
+        
+        
         grid_left.operator("modifier_pie.cursor_to_selection", text="to Select" if show_text else "", icon='CURSOR')
-        grid_left.operator("modifier_pie.cursor_to_origin", text="World Origin" if show_text else "", icon='FILE_REFRESH')
+
+        if custom_icons and "file_refresh_icon" in custom_icons:
+            
+            grid_left.operator("modifier_pie.cursor_to_origin", text="World Origin" if show_text else "", 
+                               icon_value=custom_icons["file_refresh_icon"].icon_id)
+        else:
+            grid_left.operator("modifier_pie.cursor_to_origin", text="World Origin" if show_text else "", icon='FILE_REFRESH')
+
         grid_left.operator("modifier_pie.selection_to_cursor", text="to Cursor" if show_text else "", icon='FORWARD')
         grid_left.operator("modifier_pie.toggle_pivot", text="Tog Pivot" if show_text else "", icon='PIVOT_MEDIAN')
         grid_left.operator("view3d.toggle_overlay", text="Tog Overlay" if show_text else "", icon='OVERLAY')
@@ -71,7 +98,7 @@ class PIE_MT_pivot_pie(bpy.types.Menu):
         op.rotation = True 
         op.scale = True
         
-
+        # (이하 생략 - draw 함수의 나머지 부분은 기존과 동일합니다.)
 
         grid_right = pie.grid_flow(row_major=True, columns=3, even_columns=True, even_rows=True, align=True)
         grid_right.scale_x = icon_scale
@@ -121,10 +148,38 @@ classes = (
 )
 
 def register():
+    print("--- PIVOT PIE ADDON REGISTERING ---")
+    global custom_icons
+    custom_icons = bpy.utils.previews.new()
+
+    addon_dir = os.path.dirname(__file__)
+    icons_dir = os.path.join(addon_dir, "icons")
+    
+    print(f"Searching for icons in: {icons_dir}")
+
+    if os.path.exists(icons_dir):
+        loaded_icons = []
+        for f in os.listdir(icons_dir):
+            if f.endswith(".png"):
+                icon_name = os.path.splitext(f)[0]
+                custom_icons.load(icon_name, os.path.join(icons_dir, f), 'IMAGE')
+                loaded_icons.append(icon_name)
+        if loaded_icons:
+            print(f"Successfully loaded icons: {loaded_icons}")
+        else:
+            print("Found 'icons' folder, but no .png files inside.")
+    else:
+        print("Error: 'icons' folder not found.")
+
     for cls in classes:
         bpy.utils.register_class(cls)
+    
+    print("--- REGISTER COMPLETE ---")
 
 def unregister():
+    global custom_icons
+    bpy.utils.previews.remove(custom_icons)
+
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
 

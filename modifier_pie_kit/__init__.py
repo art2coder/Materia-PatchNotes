@@ -3,7 +3,7 @@ import bpy
 bl_info = {
     "name": "Modifier Pie Kit",
     "author": "EJ",
-    "version": (1, 3, 8),
+    "version": (1, 4, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Object > Modifier Pie Kit",
     "description": "Simple Workflow Pie Menu Toolkit",
