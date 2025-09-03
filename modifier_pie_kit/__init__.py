@@ -6,7 +6,7 @@ from .operators import register as register_ops, unregister as unregister_ops
 bl_info = {
     "name": "Modifier Pie Kit",
     "author": "EJ",
-    "version": (1, 4, 5), 
+    "version": (1, 4, 6), 
     "blender": (4, 2, 0), 
     "location": "View3D > Object > Modifier Pie Kit",
     "description": "Simple Workflow Pie Menu Toolkit",
