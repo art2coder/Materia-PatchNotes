@@ -10,6 +10,7 @@ import sys
 import time
 import blf
 import gpu
+from bpy.app.handlers import persistent
 
 # --- GitHub 정보 ---
 GITHUB_USER = "art2coder"
@@ -409,6 +410,26 @@ def unregister_keymaps():
         except: pass
     addon_keymaps.clear()
 
+loaded_handlers = []
+
+@persistent
+def on_file_loaded(dummy):    
+    print("파일 로드 완료, 키맵을 다시 설정합니다.") # 디버깅용
+    update_keymaps()
+
+def register_load_handler():
+    """ 핸들러를 등록하고 전역 변수에 저장합니다. """
+    if on_file_loaded not in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(on_file_loaded)
+        loaded_handlers.append(on_file_loaded)    
+
+def unregister_load_handler():
+    """ 전역 변수에 저장된 핸들러를 제거합니다. """
+    for handler in loaded_handlers:
+        if handler in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.remove(handler)
+    loaded_handlers.clear()
+
 classes = (
     WM_OT_capture_key, 
     ModifierPiePreferences,
@@ -422,9 +443,13 @@ def register():
     for cls in classes: 
         bpy.utils.register_class(cls)
     bpy.types.Scene.modifier_pie_kit_updater = bpy.props.PointerProperty(type=UpdaterProperties)
-    bpy.app.timers.register(lambda: update_keymaps() or None, first_interval=0.1)
+    
+    update_keymaps()
+    register_load_handler()    
 
 def unregister():
+    
+    unregister_load_handler()
     unregister_keymaps()
     for cls in reversed(classes): 
         bpy.utils.unregister_class(cls)
