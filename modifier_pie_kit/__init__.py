@@ -1,33 +1,24 @@
 import bpy
-
+from . import preferences
+from . import ui
+from .operators import register as register_ops, unregister as unregister_ops
 
 bl_info = {
     "name": "Modifier Pie Kit",
     "author": "EJ",
-    "version": (1, 3, 8),
-    "blender": (4, 2, 0),
+    "version": (1, 4, 5), 
+    "blender": (4, 2, 0), 
     "location": "View3D > Object > Modifier Pie Kit",
     "description": "Simple Workflow Pie Menu Toolkit",
     "category": "Object",
 }
-ADDON_NAME = __package__ 
-
-
-from . import ui
-from .operators import register as register_ops, unregister as unregister_ops
-
 
 def register():
     register_ops()
     ui.register()
-    
-    
+    preferences.register()
 
 def unregister():
-
-    
+    preferences.unregister()
     ui.unregister()
     unregister_ops()
-
-if __name__ == "__main__":
-    register()
