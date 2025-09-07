@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier Pie Kit - Patch Notes</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #d0d0d0;
+            background-color: #1e1e1e;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            border-bottom: 2px solid #555;
+            padding-bottom: 10px;
+        }
+        h2 {
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+            margin-top: 40px;
+        }
+        code {
+            background-color: #333;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+        }
+        pre {
+            background-color: #282c34;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        #patch-notes-content {
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>Modifier Pie Kit - Patch Notes</h1>
+        <p>최신 업데이트 내용을 확인하세요.</p>
+    </header>
+
+    <main>
+        <div id="patch-notes-content">
+            <p>Loading patch notes...</p>
+        </div>
+    </main>
+
+    <script>
+        // 이 스크립트가 md 파일을 불러와서 웹페이지에 표시하는 핵심 부분입니다.
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. PATCH_NOTES.md 파일의 Raw URL 주소
+            const patchNotesUrl = 'https://raw.githubusercontent.com/art2coder/modifier-pie-kit/main/PATCH_NOTES.md';
+
+            // 2. URL에서 텍스트 파일을 비동기적으로 가져옵니다.
+            fetch(patchNotesUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(markdownText => {
+                    // 3. 가져온 마크다운 텍스트를 marked.js를 사용해 HTML로 변환합니다.
+                    const htmlContent = marked.parse(markdownText);
+                    
+                    // 4. 변환된 HTML을 페이지의 특정 요소(<div id="patch-notes-content">)에 삽입합니다.
+                    document.getElementById('patch-notes-content').innerHTML = htmlContent;
+                })
+                .catch(error => {
+                    console.error('Error fetching patch notes:', error);
+                    document.getElementById('patch-notes-content').innerHTML = 
+                        '<p style="color: #ff8b8b;">Failed to load patch notes. Please try again later.</p>';
+                });
+        });
+    </script>
+
+</body>
+</html>
